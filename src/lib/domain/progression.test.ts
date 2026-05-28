@@ -71,3 +71,83 @@ describe('nextPrescription — linear', () => {
     expect(p.consecutiveFails).toBe(1);
   });
 });
+
+import { weekWasFailed, entryStatus } from './progression';
+import type { Entry } from './types';
+
+const entry = (overrides: Partial<Entry> = {}): Entry => ({
+  prescribed: { sets: 3, reps: 8, load: 100 },
+  actualSets: [],
+  ...overrides
+});
+
+describe('weekWasFailed', () => {
+  it('returns false when all sets ok and reps >= target', () => {
+    const e = entry({
+      actualSets: [
+        { status: 'ok', reps: 8, load: 100 },
+        { status: 'ok', reps: 8, load: 100 },
+        { status: 'ok', reps: 9, load: 100 }
+      ]
+    });
+    expect(weekWasFailed(e)).toBe(false);
+  });
+
+  it('returns true when any set has status fail', () => {
+    const e = entry({
+      actualSets: [
+        { status: 'ok', reps: 8, load: 100 },
+        { status: 'fail', reps: 6, load: 100 }
+      ]
+    });
+    expect(weekWasFailed(e)).toBe(true);
+  });
+
+  it('returns true when ok set has reps below target', () => {
+    const e = entry({
+      actualSets: [
+        { status: 'ok', reps: 8, load: 100 },
+        { status: 'ok', reps: 5, load: 100 }
+      ]
+    });
+    expect(weekWasFailed(e)).toBe(true);
+  });
+});
+
+describe('entryStatus', () => {
+  it('ok when all prescribed sets completed at target reps', () => {
+    const e = entry({
+      prescribed: { sets: 3, reps: 8, load: 100 },
+      actualSets: [
+        { status: 'ok', reps: 8, load: 100 },
+        { status: 'ok', reps: 8, load: 100 },
+        { status: 'ok', reps: 8, load: 100 }
+      ]
+    });
+    expect(entryStatus(e).kind).toBe('ok');
+  });
+
+  it('fail when zero sets completed', () => {
+    const e = entry({
+      prescribed: { sets: 3, reps: 8, load: 100 },
+      actualSets: [
+        { status: 'fail', reps: 5, load: 100 },
+        { status: 'fail', reps: 4, load: 100 }
+      ]
+    });
+    expect(entryStatus(e).kind).toBe('fail');
+  });
+
+  it('partial when some sets completed', () => {
+    const e = entry({
+      prescribed: { sets: 3, reps: 8, load: 100 },
+      actualSets: [
+        { status: 'ok', reps: 8, load: 100 },
+        { status: 'fail', reps: 4, load: 100 }
+      ]
+    });
+    const s = entryStatus(e);
+    expect(s.kind).toBe('partial');
+    expect(s.text).toContain('1/3');
+  });
+});
