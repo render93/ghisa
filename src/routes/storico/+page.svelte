@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { nav } from '$lib/ui/nav';
   import { workoutsStore } from '$lib/stores/workouts.svelte';
   import { schedeStore } from '$lib/stores/schede.svelte';
   import { fmtDate } from '$lib/ui/utils';
@@ -16,7 +16,7 @@
   {#each workoutsStore.items as w (w.id)}
     {@const scheda = w.schedaId ? schedeStore.getById(w.schedaId) : null}
     {@const day = (scheda && w.dayId) ? scheda.days.find((d) => d.id === w.dayId) : null}
-    <button class="card" onclick={() => goto(`/storico/${w.id}/`)} style="display: block; width: 100%; text-align: left;">
+    <button class="card" onclick={() => nav(`/storico/${w.id}/`)} style="display: block; width: 100%; text-align: left;">
       <div class="card-head">
         <h3 class="card-name">{scheda?.name ?? 'Seduta'} {day ? `· ${day.name}` : ''}</h3>
       </div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { nav } from '$lib/ui/nav';
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
   import { nextPrescription } from '$lib/domain/progression';
@@ -20,7 +20,7 @@
 
   {#each exercisesStore.items as ex (ex.id)}
     {@const p = nextPrescription(ex, settingsStore.data)}
-    <button class="ex-card" onclick={() => goto(`/esercizi/${ex.id}/`)} style="text-align: left; width: 100%; cursor: pointer;">
+    <button class="ex-card" onclick={() => nav(`/esercizi/${ex.id}/`)} style="text-align: left; width: 100%; cursor: pointer;">
       <div class="scheme-tag {ex.scheme}">{ex.scheme}</div>
       <h3 class="name">{ex.name}</h3>
       <div class="prescription">
@@ -40,6 +40,6 @@
   {/each}
 </div>
 
-<button class="fab" aria-label="Nuovo esercizio" onclick={() => goto('/esercizi/new/')}>
+<button class="fab" aria-label="Nuovo esercizio" onclick={() => nav('/esercizi/new/')}>
   <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
 </button>

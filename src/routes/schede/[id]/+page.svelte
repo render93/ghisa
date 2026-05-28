@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
+  import { nav } from '$lib/ui/nav';
   import { schedeStore } from '$lib/stores/schede.svelte';
 
   const id = $derived(page.params.id ?? '');
@@ -39,7 +39,7 @@
     if (!confirm(`Eliminare scheda "${scheda.name}"? I giorni vengono eliminati a cascata. Lo storico delle sedute resta.`)) return;
     try {
       await schedeStore.deleteScheda(scheda.id);
-      goto('/');
+      nav('/');
     } catch (err) {
       alert('Errore: ' + (err instanceof Error ? err.message : ''));
     }
@@ -47,7 +47,7 @@
 </script>
 
 <div class="view">
-  <button class="back" onclick={() => goto('/')}>← Schede</button>
+  <button class="back" onclick={() => nav('/')}>← Schede</button>
   {#if !scheda}
     <p>Scheda non trovata.</p>
   {:else}
@@ -59,7 +59,7 @@
 
     <div class="day-chips">
       {#each scheda.days as d (d.id)}
-        <button class="day-chip" class:has-ex={d.exerciseIds.length > 0} onclick={() => goto(`/schede/${scheda.id}/days/${d.id}/`)}>
+        <button class="day-chip" class:has-ex={d.exerciseIds.length > 0} onclick={() => nav(`/schede/${scheda.id}/days/${d.id}/`)}>
           <span class="dot"></span>
           <span>{d.name}</span>
           <span class="meta">{d.exerciseIds.length}</span>

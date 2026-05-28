@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
+  import { nav } from '$lib/ui/nav';
   import { workoutsStore } from '$lib/stores/workouts.svelte';
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
@@ -11,7 +11,7 @@
 </script>
 
 <div class="view">
-  <button class="back" onclick={() => goto('/storico/')}>← Storico</button>
+  <button class="back" onclick={() => nav('/storico/')}>← Storico</button>
   {#if !workout}
     <p>Seduta non trovata.</p>
   {:else}

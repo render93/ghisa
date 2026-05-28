@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
+  import { nav } from '$lib/ui/nav';
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import ExerciseForm from '$lib/ui/ExerciseForm.svelte';
   import type { Exercise } from '$lib/domain/types';
@@ -16,14 +16,14 @@
       } else if (existing) {
         await exercisesStore.update({ ...existing, ...ex });
       }
-      goto('/esercizi/');
+      nav('/esercizi/');
     } catch (err) {
       alert('Errore salvataggio: ' + (err instanceof Error ? err.message : 'sconosciuto'));
     }
   }
 
   function cancel() {
-    goto('/esercizi/');
+    nav('/esercizi/');
   }
 
   async function remove() {
@@ -31,7 +31,7 @@
     if (!confirm(`Eliminare "${existing.name}"?`)) return;
     try {
       await exercisesStore.remove(existing.id);
-      goto('/esercizi/');
+      nav('/esercizi/');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Errore eliminazione');
     }
