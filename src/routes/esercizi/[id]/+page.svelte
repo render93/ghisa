@@ -5,7 +5,7 @@
   import ExerciseForm from '$lib/ui/ExerciseForm.svelte';
   import type { Exercise } from '$lib/domain/types';
 
-  const id = $derived(page.params.id);
+  const id = $derived(page.params.id ?? '');
   const isNew = $derived(id === 'new');
   const existing = $derived(isNew ? undefined : exercisesStore.getById(id));
 

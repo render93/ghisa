@@ -7,8 +7,8 @@
   import { settingsStore } from '$lib/stores/settings.svelte';
   import { fmtKg } from '$lib/ui/utils';
 
-  const schedaId = $derived(page.params.id);
-  const dayId = $derived(page.params.dayId);
+  const schedaId = $derived(page.params.id ?? '');
+  const dayId = $derived(page.params.dayId ?? '');
   const day = $derived(schedeStore.getDay(schedaId, dayId));
   const scheda = $derived(schedeStore.getById(schedaId));
 
