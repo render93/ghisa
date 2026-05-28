@@ -192,6 +192,25 @@ Senza JWT valido, `auth.uid()` è `null` e tutto viene bloccato.
 1. **Signup disabilitato** = lucchetto: nessun account creabile senza accesso al dashboard.
 2. **RLS** = caveau: anche se un account venisse creato, vedrebbe solo le sue righe (zero righe).
 
+### SMTP custom (obbligatorio)
+
+Il servizio SMTP **built-in** di Supabase ha rate limit molto stretti (~3-4 email/ora) ed è esplicitamente "solo per development". Con il login esclusivamente via magic link, anche un singolo utente che fa qualche tentativo nella stessa ora si trova subito bloccato dal messaggio "Email rate limit exceeded".
+
+**Soluzione:** configurare un SMTP custom nel dashboard Supabase. Provider scelto: **Resend** con dominio condiviso.
+
+- Account Resend free (https://resend.com) → 100 email/giorno, 3000/mese.
+- Mittente: `onboarding@resend.dev` (dominio condiviso di Resend, zero setup DNS).
+- API key Resend usata come password SMTP in Supabase (`Project Settings → Authentication → SMTP Settings`, host `smtp.resend.com`, porta `465`, user `resend`).
+- Sender name: `Ghisa`.
+- "Minimum interval between emails" in Supabase: `60` secondi (protezione anti-spam personale).
+- (Opzionale) `Authentication → Rate Limits` → "Rate limit for sending emails" → portare a `30` per ora.
+
+**Trade-off del dominio condiviso:** la prima magic link potrebbe finire in Promozioni o Spam su Gmail/Outlook. Si risolve marcando "Non è spam" la prima volta; le successive arrivano in inbox normalmente.
+
+**Alternative scartate:**
+- *Gmail App Password*: tecnicamente più semplice, ma usare un Gmail personale come SMTP di sistema sporca la posta inviata personale e Google a volte bloccava login da "app insicure" senza preavviso.
+- *Resend con dominio proprio*: setup DNS aggiuntivo non giustificato per un app single-user.
+
 ## Architettura frontend
 
 ### Struttura cartelle
