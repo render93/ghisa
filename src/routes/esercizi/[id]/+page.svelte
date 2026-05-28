@@ -33,7 +33,7 @@
       await exercisesStore.remove(existing.id);
       goto('/esercizi/');
     } catch (err) {
-      alert('Impossibile eliminare. Probabilmente ha sedute storiche associate.');
+      alert(err instanceof Error ? err.message : 'Errore eliminazione');
     }
   }
 </script>
