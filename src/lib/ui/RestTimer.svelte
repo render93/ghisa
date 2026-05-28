@@ -36,16 +36,23 @@
 </script>
 
 {#if timer}
+  <div class="rest-blocker" aria-hidden="true"></div>
   <div class="rest-timer">
     <div class="info">
       <p class="ex">{timer.exerciseName}</p>
       <p class="countdown" class:warn={remaining <= 10}>{fmtSec(remaining)}</p>
     </div>
-    <button class="dismiss" onclick={stop}>✕</button>
+    <button class="dismiss" onclick={stop} aria-label="Salta pausa">✕</button>
   </div>
 {/if}
 
 <style>
+  .rest-blocker {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: rgba(20, 18, 16, 0.08);
+  }
   .rest-timer {
     position: fixed;
     left: 20px;

@@ -79,7 +79,6 @@
   {@const isLast = draft.currentExIdx === draft.exercises.length - 1}
   {@const isFirst = draft.currentExIdx === 0}
   <div class="view">
-    <button class="back" onclick={cancel}>✕ Annulla seduta</button>
     <p class="view-sub">Esercizio {draft.currentExIdx + 1} di {draft.exercises.length}</p>
     <h2 class="view-title">{currentExercise.name}</h2>
 
@@ -92,36 +91,50 @@
     </div>
 
     {#each currentEntry.sets as set, i (i)}
-      <div
-        class="set-row card"
-        style="display: grid; grid-template-columns: 28px 1fr 1fr auto auto; gap: 8px; align-items: center;"
-      >
+      {@const closed = set.status !== null}
+      <div class="set-row card" class:closed>
         <span class="order">{i + 1}</span>
-        <label style="flex-direction: column; gap: 2px;">
-          <span style="font-size: 9px; color: var(--ink-3);">REPS</span>
+        <label class="field">
+          <span class="field-label">REPS</span>
           <input
             type="number"
             min="0"
             value={set.reps}
+            disabled={closed}
             oninput={(e) => updateReps(i, +(e.currentTarget as HTMLInputElement).value)}
           />
         </label>
-        <label style="flex-direction: column; gap: 2px;">
-          <span style="font-size: 9px; color: var(--ink-3);">KG</span>
+        <label class="field">
+          <span class="field-label">KG</span>
           <input
             type="number"
             min="0"
             step={settingsStore.data.plateRounding}
             value={set.load}
+            disabled={closed}
             oninput={(e) => updateLoad(i, +(e.currentTarget as HTMLInputElement).value)}
           />
         </label>
-        <button class="set-btn ok" class:active={set.status === 'ok'} onclick={() => logSet(i, 'ok')}>✓</button>
-        <button class="set-btn fail" class:active={set.status === 'fail'} onclick={() => logSet(i, 'fail')}>✕</button>
+        <button
+          type="button"
+          class="mark-btn pass"
+          class:active={set.status === 'ok'}
+          disabled={closed}
+          onclick={() => logSet(i, 'ok')}
+          aria-label="Set riuscito"
+        >✓</button>
+        <button
+          type="button"
+          class="mark-btn miss"
+          class:active={set.status === 'fail'}
+          disabled={closed}
+          onclick={() => logSet(i, 'fail')}
+          aria-label="Set fallito"
+        >✕</button>
       </div>
     {/each}
 
-    <div style="display: flex; gap: 8px; margin-top: 16px;">
+    <div class="nav-row">
       <button class="btn secondary" onclick={prev} disabled={isFirst}>← Prec</button>
       {#if isLast}
         <button class="btn primary" onclick={finish}>Concludi seduta →</button>
@@ -129,45 +142,96 @@
         <button class="btn primary" onclick={next}>Succ →</button>
       {/if}
     </div>
+
+    <button class="btn cancel" onclick={cancel}>✕ Annulla seduta</button>
   </div>
 {/if}
 
 <style>
-  .back {
+  .set-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 1fr auto auto;
+    gap: 10px;
+    align-items: end;
+  }
+  .set-row .order {
+    align-self: center;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .field-label {
     font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--ink-2);
-    padding: 6px 0;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
   }
   .set-row input {
     width: 100%;
-    padding: 8px;
+    padding: 10px;
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 16px;
+    background: var(--bg);
+    color: var(--ink);
+    height: 44px;
+    box-sizing: border-box;
   }
-  .set-btn {
-    padding: 8px 12px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    font-weight: 600;
+  .set-row input:disabled {
+    opacity: 0.55;
+    background: var(--bg-elev);
   }
-  .set-btn.ok.active {
+  .mark-btn {
+    width: 44px;
+    height: 44px;
+    border: 1.5px solid var(--line-strong, var(--line));
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--ink-2);
+    font-weight: 700;
+    font-size: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      background 0.15s,
+      border-color 0.15s,
+      color 0.15s,
+      opacity 0.15s;
+    box-sizing: border-box;
+  }
+  .mark-btn.pass.active {
     background: var(--success);
     color: white;
     border-color: var(--success);
   }
-  .set-btn.fail.active {
+  .mark-btn.miss.active {
     background: var(--accent);
     color: white;
     border-color: var(--accent);
+  }
+  .mark-btn:disabled:not(.active) {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .mark-btn:disabled.active {
+    cursor: default;
+  }
+  .set-row.closed {
+    background: var(--bg-elev);
+  }
+  .nav-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 24px;
   }
   .btn {
     padding: 14px;
     border-radius: 12px;
     font-weight: 600;
+    font-size: 14px;
     flex: 1;
   }
   .btn.primary {
@@ -177,5 +241,12 @@
   .btn.secondary {
     background: var(--bg-elev);
     color: var(--ink);
+  }
+  .btn.cancel {
+    margin-top: 12px;
+    width: 100%;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
   }
 </style>
