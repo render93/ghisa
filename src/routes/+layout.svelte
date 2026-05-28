@@ -8,6 +8,8 @@
   import { schedeStore } from '$lib/stores/schede.svelte';
   import { workoutsStore } from '$lib/stores/workouts.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
+  import Topbar from '$lib/ui/Topbar.svelte';
+  import Tabbar from '$lib/ui/Tabbar.svelte';
   import favicon from '$lib/assets/favicon.svg';
 
   let { children } = $props();
@@ -46,6 +48,20 @@
       console.error('Errore caricamento dati', err);
     }
   }
+
+  const showChrome = $derived(
+    authStore.isAuthenticated && !page.url.pathname.startsWith('/login') && storesLoaded
+  );
+
+  const topbarSubtitle = $derived.by(() => {
+    const p = page.url.pathname;
+    if (p.startsWith('/esercizi')) return 'Esercizi';
+    if (p.startsWith('/storico')) return 'Storico';
+    if (p.startsWith('/impostazioni')) return 'Impostazioni';
+    if (p.startsWith('/schede')) return 'Scheda';
+    if (p.startsWith('/workout')) return 'Seduta';
+    return 'Schede';
+  });
 </script>
 
 <svelte:head>
@@ -55,7 +71,13 @@
 {#if authStore.loading || (authStore.isAuthenticated && !storesLoaded && !page.url.pathname.startsWith('/login'))}
   <div class="loading">Caricamento…</div>
 {:else}
+  {#if showChrome}
+    <Topbar subtitle={topbarSubtitle} />
+  {/if}
   {@render children()}
+  {#if showChrome}
+    <Tabbar />
+  {/if}
 {/if}
 
 <style>
