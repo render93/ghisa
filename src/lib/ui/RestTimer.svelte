@@ -2,12 +2,12 @@
   import { onDestroy } from 'svelte';
   import { fmtSec } from './utils';
 
-  let state = $state<{ endTs: number; totalSec: number; exerciseName: string } | null>(null);
+  let timer = $state<{ endTs: number; totalSec: number; exerciseName: string } | null>(null);
   let interval: ReturnType<typeof setInterval> | null = null;
   let remaining = $state(0);
 
   export function start(seconds: number, exerciseName: string) {
-    state = { endTs: Date.now() + seconds * 1000, totalSec: seconds, exerciseName };
+    timer = { endTs: Date.now() + seconds * 1000, totalSec: seconds, exerciseName };
     remaining = seconds;
     if (interval) clearInterval(interval);
     interval = setInterval(tick, 250);
@@ -18,12 +18,12 @@
       clearInterval(interval);
       interval = null;
     }
-    state = null;
+    timer = null;
   }
 
   function tick() {
-    if (!state) return;
-    remaining = Math.max(0, (state.endTs - Date.now()) / 1000);
+    if (!timer) return;
+    remaining = Math.max(0, (timer.endTs - Date.now()) / 1000);
     if (remaining <= 0) {
       if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
       stop();
@@ -35,10 +35,10 @@
   });
 </script>
 
-{#if state}
+{#if timer}
   <div class="rest-timer">
     <div class="info">
-      <p class="ex">{state.exerciseName}</p>
+      <p class="ex">{timer.exerciseName}</p>
       <p class="countdown" class:warn={remaining <= 10}>{fmtSec(remaining)}</p>
     </div>
     <button class="dismiss" onclick={stop}>✕</button>

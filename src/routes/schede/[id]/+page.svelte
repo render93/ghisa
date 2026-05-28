@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation';
   import { schedeStore } from '$lib/stores/schede.svelte';
 
-  const id = $derived(page.params.id);
+  const id = $derived(page.params.id ?? '');
   const scheda = $derived(schedeStore.getById(id));
 
   let newDayName = $state('');
