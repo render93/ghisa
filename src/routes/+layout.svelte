@@ -3,9 +3,14 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { authStore } from '$lib/stores/auth.svelte';
+  import { exercisesStore } from '$lib/stores/exercises.svelte';
+  import { schedeStore } from '$lib/stores/schede.svelte';
+  import { workoutsStore } from '$lib/stores/workouts.svelte';
+  import { settingsStore } from '$lib/stores/settings.svelte';
   import favicon from '$lib/assets/favicon.svg';
 
   let { children } = $props();
+  let storesLoaded = $state(false);
 
   onMount(async () => {
     await authStore.init();
@@ -16,17 +21,37 @@
     const isLoginPage = page.url.pathname.startsWith('/login');
     if (!authStore.isAuthenticated && !isLoginPage) {
       goto('/login/');
-    } else if (authStore.isAuthenticated && isLoginPage) {
+      return;
+    }
+    if (authStore.isAuthenticated && isLoginPage) {
       goto('/');
+      return;
+    }
+    if (authStore.isAuthenticated && !storesLoaded) {
+      loadStores();
     }
   });
+
+  async function loadStores() {
+    try {
+      await Promise.all([
+        exercisesStore.load(),
+        schedeStore.load(),
+        workoutsStore.load(),
+        settingsStore.load()
+      ]);
+      storesLoaded = true;
+    } catch (err) {
+      console.error('Errore caricamento dati', err);
+    }
+  }
 </script>
 
 <svelte:head>
   <link rel="icon" href={favicon} />
 </svelte:head>
 
-{#if authStore.loading}
+{#if authStore.loading || (authStore.isAuthenticated && !storesLoaded && !page.url.pathname.startsWith('/login'))}
   <div class="loading">Caricamento…</div>
 {:else}
   {@render children()}
