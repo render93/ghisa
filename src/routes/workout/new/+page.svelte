@@ -174,14 +174,11 @@
     border: 1px solid var(--line);
     border-radius: 10px;
     font-size: 16px;
-    background: var(--bg);
-    color: var(--ink);
     height: 44px;
     box-sizing: border-box;
   }
   .set-row input:disabled {
     opacity: 0.55;
-    background: var(--bg-elev);
   }
   .mark-btn {
     width: 44px;
