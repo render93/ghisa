@@ -99,6 +99,10 @@ function createExercisesStore() {
     const { error } = await supabase.from('exercises').delete().eq('id', id);
     if (error) {
       state.items = prev;
+      // FK violation: 23503
+      if ((error as { code?: string }).code === '23503') {
+        throw new Error('Esercizio con sedute storiche associate — non può essere eliminato.');
+      }
       throw error;
     }
   }
