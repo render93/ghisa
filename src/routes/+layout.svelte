@@ -1,4 +1,5 @@
 <script lang="ts">
+  import '../styles/globals.css';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
