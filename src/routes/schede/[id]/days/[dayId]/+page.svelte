@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
+  import { nav } from '$lib/ui/nav';
   import { schedeStore } from '$lib/stores/schede.svelte';
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { nextPrescription } from '$lib/domain/progression';
@@ -52,16 +52,16 @@
     if (!day) return;
     if (!confirm(`Eliminare giorno "${day.name}"?`)) return;
     await schedeStore.deleteDay(schedaId, dayId);
-    goto(`/schede/${schedaId}/`);
+    nav(`/schede/${schedaId}/`);
   }
 
   function startWorkout() {
-    goto(`/workout/new/?scheda=${schedaId}&day=${dayId}`);
+    nav(`/workout/new/?scheda=${schedaId}&day=${dayId}`);
   }
 </script>
 
 <div class="view">
-  <button class="back" onclick={() => goto(`/schede/${schedaId}/`)}>← {scheda?.name ?? 'Scheda'}</button>
+  <button class="back" onclick={() => nav(`/schede/${schedaId}/`)}>← {scheda?.name ?? 'Scheda'}</button>
   {#if !day}
     <p>Giorno non trovato.</p>
   {:else}
@@ -94,7 +94,7 @@
         <p class="view-sub" style="margin: 0 0 12px;">Scegli esercizio</p>
         {#if availableExercises.length === 0}
           <p style="font-family: var(--mono); font-size: 12px; color: var(--ink-3);">Nessun esercizio disponibile.</p>
-          <button class="btn primary" onclick={() => goto('/esercizi/new/')}>Crea esercizio</button>
+          <button class="btn primary" onclick={() => nav('/esercizi/new/')}>Crea esercizio</button>
         {:else}
           {#each availableExercises as ex (ex.id)}
             <button class="day-chip" onclick={() => add(ex.id)}>{ex.name}</button>

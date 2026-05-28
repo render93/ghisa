@@ -1,6 +1,6 @@
 <script lang="ts">
   import { authStore } from '$lib/stores/auth.svelte';
-  import { goto } from '$app/navigation';
+  import { nav } from '$lib/ui/nav';
 
   let email = $state('');
   let status = $state<'idle' | 'sending' | 'sent' | 'error'>('idle');
@@ -8,7 +8,7 @@
 
   $effect(() => {
     if (authStore.isAuthenticated) {
-      goto('/');
+      nav('/');
     }
   });
 

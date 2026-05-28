@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
+  import { nav } from '$lib/ui/nav';
   import { schedeStore } from '$lib/stores/schede.svelte';
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
@@ -19,7 +19,7 @@
     const day = schedeStore.getDay(schedaId, dayId);
     if (!day) {
       alert('Giorno non trovato.');
-      goto('/');
+      nav('/');
       return;
     }
     const exs = day.exerciseIds
@@ -63,13 +63,13 @@
   }
 
   function finish() {
-    goto('/workout/summary/');
+    nav('/workout/summary/');
   }
 
   function cancel() {
     if (!confirm('Annullare la seduta? I dati non vengono salvati.')) return;
     workoutDraftStore.cancel();
-    goto('/');
+    nav('/');
   }
 </script>
 

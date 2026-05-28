@@ -1,8 +1,8 @@
 <script lang="ts">
   import '../styles/globals.css';
   import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
   import { page } from '$app/state';
+  import { nav, relPath } from '$lib/ui/nav';
   import { authStore } from '$lib/stores/auth.svelte';
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { schedeStore } from '$lib/stores/schede.svelte';
@@ -30,13 +30,13 @@
 
   $effect(() => {
     if (authStore.loading) return;
-    const isLoginPage = page.url.pathname.startsWith('/login');
+    const isLoginPage = relPath(page.url.pathname).startsWith('/login');
     if (!authStore.isAuthenticated && !isLoginPage) {
-      goto('/login/');
+      nav('/login/');
       return;
     }
     if (authStore.isAuthenticated && isLoginPage) {
-      goto('/');
+      nav('/');
       return;
     }
     if (authStore.isAuthenticated && !storesLoaded) {
@@ -59,11 +59,11 @@
   }
 
   const showChrome = $derived(
-    authStore.isAuthenticated && !page.url.pathname.startsWith('/login') && storesLoaded
+    authStore.isAuthenticated && !relPath(page.url.pathname).startsWith('/login') && storesLoaded
   );
 
   const topbarSubtitle = $derived.by(() => {
-    const p = page.url.pathname;
+    const p = relPath(page.url.pathname);
     if (p.startsWith('/esercizi')) return 'Esercizi';
     if (p.startsWith('/storico')) return 'Storico';
     if (p.startsWith('/impostazioni')) return 'Impostazioni';
@@ -77,7 +77,7 @@
   <link rel="icon" href={favicon} />
 </svelte:head>
 
-{#if authStore.loading || (authStore.isAuthenticated && !storesLoaded && !page.url.pathname.startsWith('/login'))}
+{#if authStore.loading || (authStore.isAuthenticated && !storesLoaded && !relPath(page.url.pathname).startsWith('/login'))}
   <div class="loading">Caricamento…</div>
 {:else}
   {#if showChrome}

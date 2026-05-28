@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
+  import { nav, relPath } from '$lib/ui/nav';
 
   type Tab = { key: string; label: string; href: string; matches: (p: string) => boolean };
 
@@ -17,13 +17,13 @@
   ];
 
   function isActive(t: Tab): boolean {
-    return t.matches(page.url.pathname);
+    return t.matches(relPath(page.url.pathname));
   }
 </script>
 
 <nav class="tabbar">
   {#each tabs as t (t.key)}
-    <button class="tab" class:active={isActive(t)} onclick={() => goto(t.href)}>
+    <button class="tab" class:active={isActive(t)} onclick={() => nav(t.href)}>
       {#if t.key === 'allenamento'}
         <svg viewBox="0 0 24 24"><path d="M6 4h12v16H6z"/><path d="M9 4v16M15 4v16"/></svg>
       {:else if t.key === 'esercizi'}

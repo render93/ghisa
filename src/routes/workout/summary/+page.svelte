@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { nav } from '$lib/ui/nav';
   import { workoutDraftStore } from '$lib/stores/workout-draft.svelte';
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
@@ -49,21 +49,21 @@
     try {
       await workoutsStore.commit(draft.schedaId, draft.dayId, draft.date, entries);
       workoutDraftStore.cancel();
-      goto('/storico/');
+      nav('/storico/');
     } catch (err) {
       alert('Errore salvataggio: ' + (err instanceof Error ? err.message : ''));
     }
   }
 
   function back() {
-    goto('/workout/new/');
+    nav('/workout/new/');
   }
 </script>
 
 {#if !draft}
   <div class="view">
     <p>Nessuna seduta in corso.</p>
-    <button onclick={() => goto('/')}>Home</button>
+    <button onclick={() => nav('/')}>Home</button>
   </div>
 {:else}
   <div class="view">

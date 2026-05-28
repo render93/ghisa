@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { nav } from '$lib/ui/nav';
   import { schedeStore } from '$lib/stores/schede.svelte';
 
   let newName = $state('');
@@ -12,7 +12,7 @@
     try {
       const scheda = await schedeStore.createScheda(name);
       newName = '';
-      goto(`/schede/${scheda.id}/`);
+      nav(`/schede/${scheda.id}/`);
     } catch (err) {
       alert('Errore: ' + (err instanceof Error ? err.message : ''));
     } finally {
@@ -27,7 +27,7 @@
 
   {#each schedeStore.items as s (s.id)}
     {@const totalEx = s.days.reduce((acc, d) => acc + d.exerciseIds.length, 0)}
-    <button class="card" onclick={() => goto(`/schede/${s.id}/`)} style="display: block; width: 100%; text-align: left;">
+    <button class="card" onclick={() => nav(`/schede/${s.id}/`)} style="display: block; width: 100%; text-align: left;">
       <div class="card-head">
         <h3 class="card-name">{s.name}</h3>
       </div>
