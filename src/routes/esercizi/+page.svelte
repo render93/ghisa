@@ -40,21 +40,6 @@
   {/each}
 </div>
 
-<button class="fab" onclick={() => goto('/esercizi/new/')}>+ Nuovo esercizio</button>
-
-<style>
-  .fab {
-    position: fixed;
-    right: 20px;
-    bottom: calc(80px + env(safe-area-inset-bottom));
-    background: var(--ink);
-    color: white;
-    padding: 14px 18px;
-    border-radius: 24px;
-    font-family: var(--sans);
-    font-weight: 600;
-    font-size: 13px;
-    box-shadow: var(--shadow-lg);
-    z-index: 40;
-  }
-</style>
+<button class="fab" aria-label="Nuovo esercizio" onclick={() => goto('/esercizi/new/')}>
+  <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+</button>
