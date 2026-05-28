@@ -8,6 +8,7 @@
   import { workoutDraftStore } from '$lib/stores/workout-draft.svelte';
   import { nextPrescription } from '$lib/domain/progression';
   import { fmtKg } from '$lib/ui/utils';
+  import { startRest } from '$lib/ui/rest-timer-bus';
   import type { Exercise } from '$lib/domain/types';
 
   const schedaId = $derived(page.url.searchParams.get('scheda') ?? '');
@@ -38,6 +39,9 @@
   function logSet(idx: number, status: 'ok' | 'fail') {
     if (!draft) return;
     workoutDraftStore.setSet(draft.currentExIdx, idx, { status });
+    if (status === 'ok' && currentExercise) {
+      startRest(currentExercise.restSeconds, currentExercise.name);
+    }
   }
 
   function updateReps(idx: number, value: number) {
