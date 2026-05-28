@@ -25,6 +25,21 @@ Queste cose le fa l'**utente** dal dashboard. Non sono task automatizzabili dall
   - **`anon` public key** (Dashboard → Project Settings → API → "Project API keys" → `anon` / `public`).
   - **Project Reference ID** (Dashboard → Project Settings → General → Reference ID).
 - [ ] **P3.** L'utente disabilita signup: Dashboard → Authentication → Providers → Email → toggle "Enable Email provider" ON, "Confirm email" può restare ON, "Allow new users to sign up" OFF.
+- [ ] **P3.5.** L'utente configura un SMTP custom (obbligatorio per superare il limite di ~3 email/ora del servizio built-in di Supabase, che blocca quasi subito i login via magic link). Provider: Resend con dominio condiviso.
+  1. Crea account su https://resend.com (free, 100 email/giorno).
+  2. Dashboard Resend → "API Keys" → "Create API Key" → permission "Sending access" → annota la chiave `re_...` (visibile una sola volta).
+  3. Supabase Dashboard → Project Settings → Authentication → SMTP Settings:
+     - **Enable Custom SMTP**: ON
+     - **Sender email**: `onboarding@resend.dev`
+     - **Sender name**: `Ghisa`
+     - **Host**: `smtp.resend.com`
+     - **Port number**: `465`
+     - **Username**: `resend`
+     - **Password**: la API key Resend (`re_...`)
+     - **Minimum interval between emails sent**: `60` (secondi)
+     - Salva.
+  4. (Opzionale ma consigliato) Dashboard Supabase → Authentication → Rate Limits → "Rate limit for sending emails" → `30` per ora.
+  5. Verifica: dalla login page (dopo P4 e dopo M4) richiedi un magic link → deve arrivare in inbox (controlla anche Promozioni/Spam la prima volta). Se finisce in Spam, marca "Non è spam" così le prossime arrivano in inbox normalmente.
 - [ ] **P4.** L'utente crea il proprio account: Dashboard → Authentication → Users → "Add user" → "Create new user" → inserisce la propria email (es. `gerardo.greco@blexin.com`) + password temporanea + spunta "Auto Confirm User". L'account ora esiste; il login avverrà via magic link.
 - [ ] **P5.** L'utente installa la Supabase CLI in locale (opzionale, ma utile): `brew install supabase/tap/supabase`.
 - [ ] **P6.** L'utente crea un repository GitHub vuoto (es. `render93/ghisa`) e lo collega al working directory locale come `origin` (se non già fatto). GitHub Pages verrà abilitato più avanti come parte del deploy.
