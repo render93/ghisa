@@ -151,3 +151,61 @@ describe('entryStatus', () => {
     expect(s.text).toContain('1/3');
   });
 });
+
+import { applyEntryResult } from './progression';
+
+describe('applyEntryResult — linear', () => {
+  it('all sets ok at target reps → advance load by linearIncrementKg', () => {
+    const ex = baseLinear({ linearCurrentLoad: 60 });
+    const e = entry({
+      prescribed: { sets: 3, reps: 8, load: 60 },
+      actualSets: [
+        { status: 'ok', reps: 8, load: 60 },
+        { status: 'ok', reps: 8, load: 60 },
+        { status: 'ok', reps: 8, load: 60 }
+      ]
+    });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    expect(result.info.kind).toBe('linear-advance');
+    expect(result.updatedExercise.linearCurrentLoad).toBe(62.5);
+    expect(result.updatedExercise.linearConsecutiveFailures).toBe(0);
+  });
+
+  it('one fail → linear-repeat, increment counter', () => {
+    const ex = baseLinear({ linearCurrentLoad: 60, linearConsecutiveFailures: 0 });
+    const e = entry({
+      prescribed: { sets: 3, reps: 8, load: 60 },
+      actualSets: [
+        { status: 'ok', reps: 8, load: 60 },
+        { status: 'fail', reps: 5, load: 60 }
+      ]
+    });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    expect(result.info.kind).toBe('linear-repeat');
+    expect(result.updatedExercise.linearCurrentLoad).toBe(60);
+    expect(result.updatedExercise.linearConsecutiveFailures).toBe(1);
+  });
+
+  it('two consecutive fails → linear-deload, reset counter', () => {
+    const ex = baseLinear({ linearCurrentLoad: 60, linearConsecutiveFailures: 1 });
+    const e = entry({
+      prescribed: { sets: 3, reps: 8, load: 60 },
+      actualSets: [{ status: 'fail', reps: 5, load: 60 }]
+    });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    expect(result.info.kind).toBe('linear-deload');
+    // 60 * (1 - 10/100) = 54, rounded to 2.5 → 55
+    expect(result.updatedExercise.linearCurrentLoad).toBe(55);
+    expect(result.updatedExercise.linearConsecutiveFailures).toBe(0);
+  });
+
+  it('no attempts (all status null) → noop', () => {
+    const ex = baseLinear();
+    const e = entry({
+      actualSets: [{ status: null, reps: 0, load: 0 }]
+    });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    expect(result.info.kind).toBe('noop');
+    expect(result.updatedExercise).toEqual(ex);
+  });
+});
