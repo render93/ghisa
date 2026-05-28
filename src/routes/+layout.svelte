@@ -10,13 +10,22 @@
   import { settingsStore } from '$lib/stores/settings.svelte';
   import Topbar from '$lib/ui/Topbar.svelte';
   import Tabbar from '$lib/ui/Tabbar.svelte';
+  import RestTimer from '$lib/ui/RestTimer.svelte';
+  import { registerRestTimer } from '$lib/ui/rest-timer-bus';
   import favicon from '$lib/assets/favicon.svg';
 
   let { children } = $props();
   let storesLoaded = $state(false);
+  let restTimer = $state<RestTimer | undefined>();
 
   onMount(async () => {
     await authStore.init();
+  });
+
+  $effect(() => {
+    if (restTimer) {
+      registerRestTimer((s, n) => restTimer!.start(s, n));
+    }
   });
 
   $effect(() => {
@@ -78,6 +87,7 @@
   {#if showChrome}
     <Tabbar />
   {/if}
+  <RestTimer bind:this={restTimer} />
 {/if}
 
 <style>
