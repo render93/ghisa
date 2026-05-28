@@ -1,5 +1,7 @@
 import {
   WAVE_PATTERN,
+  type Entry,
+  type EntryStatus,
   type Exercise,
   type Prescription,
   type Settings
@@ -42,4 +44,20 @@ export function nextPrescription(ex: Exercise, settings: Settings): Prescription
     load: ex.linearCurrentLoad ?? 0,
     consecutiveFails: ex.linearConsecutiveFailures ?? 0
   };
+}
+
+export function weekWasFailed(entry: Entry): boolean {
+  const target = entry.prescribed.reps;
+  return entry.actualSets.some(
+    (s) => s.status === 'fail' || (s.status === 'ok' && (s.reps || 0) < target)
+  );
+}
+
+export function entryStatus(entry: Entry): EntryStatus {
+  const target = entry.prescribed.reps;
+  const ok = entry.actualSets.filter((s) => s.status === 'ok' && (s.reps || 0) >= target).length;
+  const total = entry.prescribed.sets;
+  if (ok === total) return { kind: 'ok', text: 'Conclusa' };
+  if (ok === 0) return { kind: 'fail', text: 'Fallita' };
+  return { kind: 'partial', text: `Parziale ${ok}/${total}` };
 }
