@@ -1,48 +1,101 @@
-## Project Configuration
+# CLAUDE.md
 
-- **Language**: TypeScript
-- **Package Manager**: npm
-- **Add-ons**: none
-
----
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project
 
-Ghisa — a single-file, Italian-language workout diary. The entire application lives in `index.html`: HTML shell, CSS (lines ~12–273), and vanilla JS (lines ~279–1683). There is no build step, no package manager, no test suite, and no framework.
+Ghisa — a single-user, Italian-language workout diary deployed as a static SPA on GitHub Pages with Supabase as the persistence + auth layer. The repo also still contains the original `index.html` (pre-refactor single-file app) at the root — it is **not** the runtime any more; the running app is the SvelteKit project. Do not edit `index.html` for app changes.
 
-## Running
+The refactor plan and design spec live in `docs/superpowers/plans/` and `docs/superpowers/specs/`. They describe how the current architecture was built milestone by milestone; useful as context but not authoritative for current state.
 
-Open `index.html` in a browser. The app expects a `window.storage` API to exist — see "Storage" below.
+## Stack
+
+SvelteKit 2 · Svelte 5 (runes mode, enforced project-wide in `svelte.config.js`) · TypeScript · Vite · Vitest · `@supabase/supabase-js` · `adapter-static` (SPA fallback). No SSR, no prerendering — `src/routes/+layout.ts` disables both globally, and `trailingSlash = 'always'` is on, so always include a trailing slash when calling `goto()`.
+
+## Commands
+
+- `npm run dev` — dev server on `:5173`
+- `npm run build` — static build into `build/` (reads `BASE_PATH` env var for GitHub Pages path prefix)
+- `npm run preview` — serve the built bundle locally
+- `npm run check` — `svelte-kit sync && svelte-check --tsconfig ./tsconfig.json` (TS + Svelte type check; the CI workflow runs the bare `svelte-check`, but locally always use this so generated files are refreshed)
+- `npm test` — run Vitest once
+- `npm test -- src/lib/domain/progression.test.ts` — run a single test file
+- `npm test -- -t "wave-cycle-end"` — filter by test name
+- `npm run test:watch` — Vitest in watch mode
+
+Env vars (in `.env.local`, never committed): `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_ANON_KEY`. Both are baked into the bundle at build time via `$env/static/public` — the anon key is safe to ship because RLS is the security boundary.
 
 ## Architecture
 
-The whole app is a single `state` object plus a render-everything-from-scratch loop.
+### Auth gate + store hydration (single point of control)
 
-- **Single state tree** (`state`, ~line 309): `exercises`, `schede` (workout plans), `workouts` (logged sessions), `settings`, plus a `ui` sub-object that holds the current view, active IDs, draft workouts, and modal state. There is no component tree — `ui.view` is a string and the dispatcher in `render()` (~line 538) picks one `renderXxx()` function to produce an HTML string.
-- **Render cycle**: every state change calls `render()`, which sets `app.innerHTML` and then `attachHandlers()` (~line 1261) re-binds events by walking `data-*` attributes. There is no diffing — all handlers must be reattached every render. The rest timer is the only thing rendered incrementally (`renderTimer`, ~line 567) to avoid wiping input focus during a workout.
-- **Workout flow**: a workout in progress lives in `state.ui.workoutDraft` (transient, not persisted). When the user finishes, `commitWorkout()` (~line 1632) runs `applyEntryResult()` for each exercise (mutating the exercise's progression state), pushes a `workout` record into `state.workouts`, and saves. This is the only place exercise progression state is advanced.
+`src/routes/+layout.svelte` is the entire app shell. On mount it calls `authStore.init()`, then a single `$effect` reacts to the auth state:
 
-### Progression engines
+- not authenticated + not on `/login/` → redirect to `/login/`
+- authenticated + on `/login/` → redirect to `/`
+- authenticated + stores not yet loaded → `loadStores()` calls `.load()` in parallel on `exercisesStore`, `schedeStore`, `workoutsStore`, `settingsStore`
 
-Both schemes live in `applyEntryResult()` (~line 442) and are driven by `state.settings`:
+`Topbar` + `Tabbar` + a global `RestTimer` are only rendered when authenticated and stores are loaded. Every route component can assume the stores are hydrated.
 
-- **wave** — 5-week cycle following `WAVE_PATTERN` (sets/reps/mult table at line 284). Each completed cycle multiplies `waveBaseLoad` by `(1 + waveCycleIncrementPct/100)`. Failures within a cycle accumulate in `ex.cycleFailures`; at cycle end this triggers `hold` (≥ `cycleHoldThreshold`) or `reset` (≥ `cycleResetThreshold`, drops base by `cycleResetPct`). Every `deloadEveryNCycles` successful cycles sets `pendingDeload`, which scales the next session's load/sets/reps down.
-- **linear** — fixed sets×reps at `linearCurrentLoad`. Full completion → `+linearIncrementKg`. Two consecutive failures → load drops by `linearResetPct`.
+### Stores — module-level singletons, Svelte 5 runes outside `.svelte`
 
-When editing progression logic, also check `nextPrescription()` (~line 411), which computes the *prescribed* values shown before a workout — the two functions must stay in sync.
+All stores live in `src/lib/stores/*.svelte.ts`. The `.svelte.ts` extension is **required** for `$state`/`$derived`/`$effect` runes to work in non-component files; do not rename to `.ts`.
 
-### Storage
+Each store is a closure that exposes getters + async mutators. Mutators follow the same shape: **optimistic in-memory update first, Supabase round-trip second, rollback on error**. See `exercises.svelte.ts` `update()` / `remove()` for the canonical pattern.
 
-Persistence goes through `window.storage.get/set/delete` (async, returns `{value: string}`) — **not** `localStorage`. This is the Claude.ai artifact storage API; the app is designed to run as an artifact. If running outside that environment, you'll need to shim `window.storage` (a `localStorage`-backed adapter works).
+Stores wrap Supabase rows in a domain shape via `dbToDomain` / `domainToDb` helpers (snake_case columns ↔ camelCase TS types). The auto-generated `src/lib/database.types.ts` is the source of truth for column shapes — regenerate it after every schema change.
 
-`STORAGE_KEY = 'ghisa-state-v2'`. On load, missing v2 data triggers a one-shot migration from `'ghisa-state-v1'` (`loadState()`, ~line 335) that converts the legacy per-exercise `sessions` array into orphan `workouts` (with `schedaId/dayId = null` and `legacy: true`). Keep this migration in place — it's the only path for existing users.
+### Domain layer — pure functions, fully unit-tested
 
-When changing the state shape, bump `STORAGE_KEY` and add a migration rather than silently breaking existing data.
+`src/lib/domain/progression.ts` holds the wave + linear progression engines as pure functions taking `Exercise`, `Entry`, `Settings` and returning a new `Exercise` + a `ProgressionResult` discriminated union. No I/O, no global state, no mutation of inputs.
+
+Two functions must stay in lock-step:
+- `nextPrescription(ex, settings)` — computes the prescription **shown before** a session.
+- `applyEntryResult(ex, entry, userAction, settings)` — computes the new exercise state **after** a session.
+
+If you change one, run the Vitest suite (`progression.test.ts`) and update the other. The tests cover all wave week/cycle transitions (advance, repeat-week, hold, reset, deload trigger, deload completion) and the linear advance/repeat/deload paths.
+
+### Workout flow — transient draft → atomic commit
+
+A workout in progress is **not** persisted. It lives in `workout-draft.svelte.ts` (`workoutDraftStore.draft`), populated when the user starts a session in `/workout/new/`. Each set logged updates the draft in memory only.
+
+The draft becomes a real DB record only when the user confirms in `/workout/summary/`:
+1. For each entry with any logged set, `applyEntryResult(...)` computes the updated exercise + result info.
+2. `exercisesStore.update(updatedExercise)` writes the new progression state.
+3. `workoutsStore.commit(...)` inserts one `workouts` row + N `workout_entries` rows in a single Supabase call.
+4. The draft is cleared and the user is sent to `/storico/`.
+
+This is the **only** place exercise progression state advances. If you add a new mutation path, mirror the same sequence (apply → update exercise → commit workout) or progression state will desync from history.
+
+### Rest timer — singleton via event bus
+
+`<RestTimer>` is mounted once in the root layout. Any component can trigger it without prop-drilling by calling `startRest(seconds, exerciseName)` from `src/lib/ui/rest-timer-bus.ts`. The layout registers the starter on mount; calls before registration are silently dropped.
+
+### Persistence + schema changes
+
+Schema migrations are SQL files in `supabase/migrations/`. The repo does **not** apply them automatically — the migration is hand-run in the Supabase SQL Editor (see `docs/superpowers/plans/...`). After applying:
+
+```bash
+npx supabase gen types typescript --project-id <project-ref> > src/lib/database.types.ts
+```
+
+All 6 tables have RLS policies of the form `auth.uid() = user_id` — single-tenant by construction. There is no service-role usage anywhere in the frontend; if you find yourself wanting one, stop and reconsider.
+
+### Deploy
+
+`.github/workflows/deploy.yml` builds and deploys to GitHub Pages on push to `main`. The workflow:
+1. `npm ci`
+2. `npx svelte-check --tsconfig ./tsconfig.json`
+3. `npm test`
+4. `npm run build` with `BASE_PATH=/<repo-name>` + Supabase secrets from repo secrets
+5. Uploads `build/` as the Pages artifact and deploys
+
+The Supabase **Site URL** and **Redirect URLs** must include the production GitHub Pages URL with trailing slash, otherwise magic-link emails redirect to `localhost` in prod.
 
 ## Conventions
 
-- UI strings are Italian. Match the existing tone (concise, lowercase, sentence-style) when adding new copy.
-- The bottom tab bar exposes four sections: `allenamento`, `esercizi`, `storico`, `impostazioni` (`state.ui.tab`). Views are grouped by tab — keep new views consistent with their tab's section.
-- IDs use the `uid(prefix)` helper (~line 389): `ex_`, `sch_`, `day_`, `w_`. Workouts migrated from v1 keep the `w_` prefix with the original ID appended.
-- Always call `saveState()` after mutating `state.exercises | schede | workouts | settings`, and call `render()` after any state change that affects the UI.
-- All user-supplied text rendered into HTML must go through `escapeHtml()` (~line 404).
+- UI strings are Italian — concise, mostly lowercase, sentence-style. Match the existing tone when adding copy.
+- Bottom tabbar exposes four sections, mapped to routes: `Allenamento` → `/`, `Esercizi` → `/esercizi/`, `Storico` → `/storico/`, `Impostazioni` → `/impostazioni/`.
+- `alert()` / `confirm()` calls are intentional placeholders for future toast/modal components — don't replace them piecemeal; do all of them in one pass when the toast component lands.
+- When a store needs the current user id, it calls `supabase.auth.getUser()` directly rather than reading from `authStore`. Keep this pattern — it ensures every write is double-checked against the live session, not stale store state.
+- Plate rounding, default rest seconds, deload settings, threshold cutoffs all live in `Settings` and are read at use-site from `settingsStore.data`. Do not hardcode them.
