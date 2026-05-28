@@ -209,3 +209,111 @@ describe('applyEntryResult — linear', () => {
     expect(result.updatedExercise).toEqual(ex);
   });
 });
+
+describe('applyEntryResult — wave', () => {
+  const allOk = (prescribed: { sets: number; reps: number; load: number }): Entry => ({
+    prescribed,
+    actualSets: Array.from({ length: prescribed.sets }, () => ({
+      status: 'ok' as const,
+      reps: prescribed.reps,
+      load: prescribed.load
+    }))
+  });
+
+  const failedEntry = (prescribed: { sets: number; reps: number; load: number }): Entry => ({
+    prescribed,
+    actualSets: [
+      { status: 'ok', reps: prescribed.reps, load: prescribed.load },
+      { status: 'fail', reps: prescribed.reps - 2, load: prescribed.load }
+    ]
+  });
+
+  it('week 1 ok → wave-advance-week to week 2', () => {
+    const ex = baseWave({ waveCurrentWeek: 1, cycleFailures: 0 });
+    const e = allOk({ sets: 3, reps: 8, load: 100 });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    expect(result.info.kind).toBe('wave-advance-week');
+    expect(result.updatedExercise.waveCurrentWeek).toBe(2);
+    expect(result.updatedExercise.cycleFailures).toBe(0);
+  });
+
+  it('failed week + userAction=repeat → wave-repeat-week, increment cycleFailures', () => {
+    const ex = baseWave({ waveCurrentWeek: 2, cycleFailures: 0 });
+    const e = failedEntry({ sets: 4, reps: 6, load: 105 });
+    const result = applyEntryResult(ex, e, 'repeat', DEFAULT_SETTINGS);
+    expect(result.info.kind).toBe('wave-repeat-week');
+    expect(result.updatedExercise.waveCurrentWeek).toBe(2);
+    expect(result.updatedExercise.cycleFailures).toBe(1);
+  });
+
+  it('failed week + userAction=null → wave-advance-week with failed=true', () => {
+    const ex = baseWave({ waveCurrentWeek: 2, cycleFailures: 0 });
+    const e = failedEntry({ sets: 4, reps: 6, load: 105 });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    expect(result.info.kind).toBe('wave-advance-week');
+    if (result.info.kind === 'wave-advance-week') {
+      expect(result.info.failed).toBe(true);
+    }
+    expect(result.updatedExercise.waveCurrentWeek).toBe(3);
+    expect(result.updatedExercise.cycleFailures).toBe(1);
+  });
+
+  it('end of cycle with cycleFailures=0 → wave-cycle-end normal, increment cycle', () => {
+    const ex = baseWave({ waveCurrentWeek: 5, waveCurrentCycle: 1, cycleFailures: 0 });
+    const e = allOk({ sets: 8, reps: 3, load: 120 });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    expect(result.info.kind).toBe('wave-cycle-end');
+    if (result.info.kind === 'wave-cycle-end') {
+      expect(result.info.adjustmentKind).toBe('normal');
+      expect(result.info.nextCycle).toBe(2);
+      expect(result.info.oldBase).toBe(100);
+      expect(result.info.newBase).toBe(100);
+    }
+    expect(result.updatedExercise.waveCurrentWeek).toBe(1);
+    expect(result.updatedExercise.waveCurrentCycle).toBe(2);
+  });
+
+  it('end of cycle with cycleFailures=2 (hold threshold) → adjustmentKind=hold, cycle NOT incremented', () => {
+    const ex = baseWave({ waveCurrentWeek: 5, waveCurrentCycle: 1, cycleFailures: 2 });
+    const e = allOk({ sets: 8, reps: 3, load: 120 });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    if (result.info.kind === 'wave-cycle-end') {
+      expect(result.info.adjustmentKind).toBe('hold');
+    }
+    expect(result.updatedExercise.waveCurrentCycle).toBe(1);
+  });
+
+  it('end of cycle with cycleFailures=3 (reset threshold) → adjustmentKind=reset, baseLoad reduced', () => {
+    const ex = baseWave({ waveBaseLoad: 100, waveCurrentWeek: 5, waveCurrentCycle: 1, cycleFailures: 3 });
+    const e = allOk({ sets: 8, reps: 3, load: 120 });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    if (result.info.kind === 'wave-cycle-end') {
+      expect(result.info.adjustmentKind).toBe('reset');
+    }
+    // 100 * (1 - 5/100) = 95
+    expect(result.updatedExercise.waveBaseLoad).toBe(95);
+  });
+
+  it('end of cycle that triggers deload (cycle 3 with deloadEveryNCycles=3) → pendingDeload=true', () => {
+    const ex = baseWave({ waveCurrentWeek: 5, waveCurrentCycle: 3, cycleFailures: 0 });
+    const e = allOk({ sets: 8, reps: 3, load: 120 });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    // After increment, cycle becomes 4. (4-1) % 3 == 0 → pendingDeload
+    expect(result.updatedExercise.pendingDeload).toBe(true);
+    expect(result.updatedExercise.waveCurrentCycle).toBe(4);
+  });
+
+  it('completion of deload session → deload-completed, pendingDeload cleared', () => {
+    const ex = baseWave({ pendingDeload: true });
+    const e: Entry = {
+      prescribed: { sets: 2, reps: 6, load: 90, isDeload: true },
+      actualSets: [
+        { status: 'ok', reps: 6, load: 90 },
+        { status: 'ok', reps: 6, load: 90 }
+      ]
+    };
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    expect(result.info.kind).toBe('deload-completed');
+    expect(result.updatedExercise.pendingDeload).toBe(false);
+  });
+});
