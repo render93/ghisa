@@ -20,7 +20,25 @@
       <div class="card-head">
         <h3 class="card-name">{scheda?.name ?? 'Seduta'} {day ? `· ${day.name}` : ''}</h3>
       </div>
-      <div class="card-sub">{fmtDate(w.performedAt)} · {w.entries.length} esercizi</div>
+      {#if w.skipped}
+        <div class="card-sub"><span class="badge skip">saltata</span> {fmtDate(w.performedAt)}{w.note ? ` · ${w.note}` : ''}</div>
+      {:else}
+        <div class="card-sub">{fmtDate(w.performedAt)} · {w.entries.length} esercizi</div>
+      {/if}
     </button>
   {/each}
 </div>
+
+<style>
+  .badge.skip {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: var(--bg-elev);
+    color: var(--ink-2);
+    margin-right: 6px;
+  }
+</style>
