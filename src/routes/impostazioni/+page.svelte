@@ -6,7 +6,8 @@
   const HELP: Record<string, string> = {
     weightUnit: 'Unità per visualizzare e inserire i carichi.',
     defaultRestSec: 'Tempo di riposo suggerito tra una serie e l\'altra, usato dal timer.',
-    plateRounding: 'Granularità dei carichi (es. 2.5 = bilanciere + dischi da 1.25 kg per lato).',
+    plateRoundingWave: 'Passo di arrotondamento per gli esercizi wave (es. 2.5 = dischi da 1.25 kg per lato).',
+    plateRoundingLinear: 'Passo di arrotondamento per gli esercizi linear (es. 2 = manubri con step da 2 kg).',
     waveCycleIncrementPct: 'Aumento percentuale del carico base alla fine di ogni ciclo di 5 settimane.',
     cycleHoldThreshold: 'Numero di settimane fallite oltre cui il ciclo successivo mantiene il carico (nessun aumento).',
     cycleResetThreshold: 'Numero di settimane fallite oltre cui il carico base viene ridotto al ciclo successivo.',
@@ -91,18 +92,19 @@
       {@render helpText('defaultRestSec')}
     </div>
 
-    <div class="field">
-      <div class="field-head">
-        <label for="f-plateRounding">Arrotondamento dischi</label>
-        {@render helpIcon('plateRounding')}
-      </div>
-      <input id="f-plateRounding" type="number" bind:value={editing.plateRounding} step="0.5" min="0.5" />
-      {@render helpText('plateRounding')}
-    </div>
   </div>
 
   <div class="card">
     <h3 class="card-name" style="font-size: 18px;">Wave</h3>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="f-plateRoundingWave">Arrotondamento dischi</label>
+        {@render helpIcon('plateRoundingWave')}
+      </div>
+      <input id="f-plateRoundingWave" type="number" bind:value={editing.plateRoundingWave} step="0.5" min="0.5" />
+      {@render helpText('plateRoundingWave')}
+    </div>
 
     <div class="field">
       <div class="field-head">
@@ -179,6 +181,15 @@
 
   <div class="card">
     <h3 class="card-name" style="font-size: 18px;">Linear</h3>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="f-plateRoundingLinear">Arrotondamento dischi</label>
+        {@render helpIcon('plateRoundingLinear')}
+      </div>
+      <input id="f-plateRoundingLinear" type="number" bind:value={editing.plateRoundingLinear} step="0.5" min="0.5" />
+      {@render helpText('plateRoundingLinear')}
+    </div>
 
     <div class="field">
       <div class="field-head">
