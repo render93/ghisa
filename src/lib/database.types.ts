@@ -160,6 +160,7 @@ export type Database = {
           position: number
           prescribed: Json
           result_info: Json | null
+          skipped: boolean
           user_action: string | null
           user_id: string
           workout_id: string
@@ -172,6 +173,7 @@ export type Database = {
           position: number
           prescribed: Json
           result_info?: Json | null
+          skipped?: boolean
           user_action?: string | null
           user_id: string
           workout_id: string
@@ -184,6 +186,7 @@ export type Database = {
           position?: number
           prescribed?: Json
           result_info?: Json | null
+          skipped?: boolean
           user_action?: string | null
           user_id?: string
           workout_id?: string
@@ -210,24 +213,30 @@ export type Database = {
           created_at: string
           day_id: string | null
           id: string
+          note: string | null
           performed_at: string
           scheda_id: string | null
+          skipped: boolean
           user_id: string
         }
         Insert: {
           created_at?: string
           day_id?: string | null
           id?: string
+          note?: string | null
           performed_at: string
           scheda_id?: string | null
+          skipped?: boolean
           user_id: string
         }
         Update: {
           created_at?: string
           day_id?: string | null
           id?: string
+          note?: string | null
           performed_at?: string
           scheda_id?: string | null
+          skipped?: boolean
           user_id?: string
         }
         Relationships: [
