@@ -41,7 +41,9 @@
 
 **Files:**
 - Create: `supabase/migrations/20260603000000_add_plate_rounding_to_exercises.sql`
-- Modify (manuale): `src/lib/database.types.ts`
+- Modify: `src/lib/database.types.ts`
+
+> **Nota esecuzione:** l'applicazione del SQL sul DB Supabase (SQL Editor) è un passo **manuale dell'utente**, fatto separatamente prima dell'uso a runtime. In questo task il file SQL viene creato e `database.types.ts` viene allineato **a mano** alle colonne previste, così build e test restano verdi. Quando l'utente rilancerà `npx supabase gen types`, l'output reale combacerà con questi tipi.
 
 - [ ] **Step 1: Creare il file di migration**
 
@@ -52,22 +54,17 @@
 alter table exercises add column plate_rounding numeric;
 ```
 
-- [ ] **Step 2: Applicare la migration a mano**
+- [ ] **Step 2: Allineare `database.types.ts`**
 
-Aprire lo SQL Editor del progetto Supabase e incollare/eseguire il contenuto del file dello Step 1. Verificare che la colonna `plate_rounding` compaia in `exercises` (Table Editor).
+In `src/lib/database.types.ts`, dentro `exercises`, aggiungere (in ordine alfabetico, dopo `linear_target_sets`):
+- in `Row`: `plate_rounding: number | null`
+- in `Insert`: `plate_rounding?: number | null`
+- in `Update`: `plate_rounding?: number | null`
 
-- [ ] **Step 3: Rigenerare i tipi del DB**
+- [ ] **Step 3: Type-check**
 
-Ricavare il project-ref dal sottodominio in `.env.local`:
-```bash
-grep PUBLIC_SUPABASE_URL .env.local
-# es. https://<project-ref>.supabase.co → <project-ref> è la parte prima di .supabase.co
-```
-Poi:
-```bash
-npx supabase gen types typescript --project-id <project-ref> > src/lib/database.types.ts
-```
-Atteso: `src/lib/database.types.ts` ora include `plate_rounding: number | null` nella riga `exercises`.
+Run: `npm run check`
+Atteso: nessun errore introdotto da questa modifica.
 
 - [ ] **Step 4: Commit**
 
