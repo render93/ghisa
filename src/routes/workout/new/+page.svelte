@@ -62,6 +62,11 @@
     workoutDraftStore.prevExercise();
   }
 
+  function toggleSkip() {
+    if (!draft || !currentEntry) return;
+    workoutDraftStore.setSkipped(draft.currentExIdx, !currentEntry.skipped);
+  }
+
   function finish() {
     nav('/workout/summary/');
   }
@@ -90,49 +95,57 @@
       </div>
     </div>
 
-    {#each currentEntry.sets as set, i (i)}
-      {@const closed = set.status !== null}
-      <div class="set-row card" class:closed>
-        <span class="order">{i + 1}</span>
-        <label class="field">
-          <span class="field-label">REPS</span>
-          <input
-            type="number"
-            min="0"
-            value={set.reps}
+    <button type="button" class="btn skip-toggle" class:on={currentEntry.skipped} onclick={toggleSkip}>
+      {currentEntry.skipped ? 'annulla salto' : 'salta esercizio'}
+    </button>
+
+    {#if currentEntry.skipped}
+      <div class="card skipped-note">esercizio saltato — non inciderà sui pesi</div>
+    {:else}
+      {#each currentEntry.sets as set, i (i)}
+        {@const closed = set.status !== null}
+        <div class="set-row card" class:closed>
+          <span class="order">{i + 1}</span>
+          <label class="field">
+            <span class="field-label">REPS</span>
+            <input
+              type="number"
+              min="0"
+              value={set.reps}
+              disabled={closed}
+              oninput={(e) => updateReps(i, +(e.currentTarget as HTMLInputElement).value)}
+            />
+          </label>
+          <label class="field">
+            <span class="field-label">KG</span>
+            <input
+              type="number"
+              min="0"
+              step={effectiveRounding(currentExercise, settingsStore.data)}
+              value={set.load}
+              disabled={closed}
+              oninput={(e) => updateLoad(i, +(e.currentTarget as HTMLInputElement).value)}
+            />
+          </label>
+          <button
+            type="button"
+            class="mark-btn pass"
+            class:active={set.status === 'ok'}
             disabled={closed}
-            oninput={(e) => updateReps(i, +(e.currentTarget as HTMLInputElement).value)}
-          />
-        </label>
-        <label class="field">
-          <span class="field-label">KG</span>
-          <input
-            type="number"
-            min="0"
-            step={effectiveRounding(currentExercise, settingsStore.data)}
-            value={set.load}
+            onclick={() => logSet(i, 'ok')}
+            aria-label="Set riuscito"
+          >✓</button>
+          <button
+            type="button"
+            class="mark-btn miss"
+            class:active={set.status === 'fail'}
             disabled={closed}
-            oninput={(e) => updateLoad(i, +(e.currentTarget as HTMLInputElement).value)}
-          />
-        </label>
-        <button
-          type="button"
-          class="mark-btn pass"
-          class:active={set.status === 'ok'}
-          disabled={closed}
-          onclick={() => logSet(i, 'ok')}
-          aria-label="Set riuscito"
-        >✓</button>
-        <button
-          type="button"
-          class="mark-btn miss"
-          class:active={set.status === 'fail'}
-          disabled={closed}
-          onclick={() => logSet(i, 'fail')}
-          aria-label="Set fallito"
-        >✕</button>
-      </div>
-    {/each}
+            onclick={() => logSet(i, 'fail')}
+            aria-label="Set fallito"
+          >✕</button>
+        </div>
+      {/each}
+    {/if}
 
     <div class="nav-row">
       <button class="btn secondary" onclick={prev} disabled={isFirst}>← Prec</button>
@@ -245,5 +258,22 @@
     background: transparent;
     color: var(--accent);
     border: 1px solid var(--accent);
+  }
+  .btn.skip-toggle {
+    width: 100%;
+    margin: 8px 0 12px;
+    background: var(--bg-elev);
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+  }
+  .btn.skip-toggle.on {
+    border-color: var(--warn, var(--accent));
+    color: var(--warn, var(--accent));
+  }
+  .skipped-note {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-3);
+    text-align: center;
   }
 </style>
