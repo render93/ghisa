@@ -11,6 +11,7 @@ export type WorkoutEntryRecord = {
   userAction: 'repeat' | null;
   resultInfo: ProgressionResult | null;
   isDeloadSession: boolean;
+  skipped: boolean;
 };
 
 export type Workout = {
@@ -18,6 +19,8 @@ export type Workout = {
   schedaId: string | null;
   dayId: string | null;
   performedAt: string;
+  skipped: boolean;
+  note: string | null;
   entries: WorkoutEntryRecord[];
 };
 
@@ -43,7 +46,8 @@ function createWorkoutsStore() {
         actualSets: e.actual_sets as Entry['actualSets'],
         userAction: e.user_action as 'repeat' | null,
         resultInfo: e.result_info as ProgressionResult | null,
-        isDeloadSession: e.is_deload_session as boolean
+        isDeloadSession: e.is_deload_session as boolean,
+        skipped: e.skipped as boolean
       };
       if (!entriesByWorkout.has(rec.workoutId)) entriesByWorkout.set(rec.workoutId, []);
       entriesByWorkout.get(rec.workoutId)!.push(rec);
@@ -54,6 +58,8 @@ function createWorkoutsStore() {
       schedaId: w.scheda_id as string | null,
       dayId: w.day_id as string | null,
       performedAt: w.performed_at as string,
+      skipped: w.skipped as boolean,
+      note: w.note as string | null,
       entries: entriesByWorkout.get(w.id as string) || []
     }));
     state.loaded = true;
@@ -90,7 +96,8 @@ function createWorkoutsStore() {
       actual_sets: e.actualSets,
       user_action: e.userAction,
       result_info: e.resultInfo,
-      is_deload_session: e.isDeloadSession
+      is_deload_session: e.isDeloadSession,
+      skipped: e.skipped
     }));
 
     const { data: insertedEntries, error: e2 } = await supabase
@@ -104,6 +111,8 @@ function createWorkoutsStore() {
       schedaId,
       dayId,
       performedAt,
+      skipped: (workout.skipped as boolean) ?? false,
+      note: (workout.note as string | null) ?? null,
       entries: (insertedEntries || []).map((e) => ({
         id: e.id as string,
         workoutId,
@@ -113,8 +122,45 @@ function createWorkoutsStore() {
         actualSets: e.actual_sets as Entry['actualSets'],
         userAction: e.user_action as 'repeat' | null,
         resultInfo: e.result_info as ProgressionResult | null,
-        isDeloadSession: e.is_deload_session as boolean
+        isDeloadSession: e.is_deload_session as boolean,
+        skipped: e.skipped as boolean
       }))
+    };
+    state.items = [newWorkout, ...state.items];
+    return newWorkout;
+  }
+
+  async function commitSkip(
+    schedaId: string | null,
+    dayId: string | null,
+    performedAt: string,
+    note: string | null
+  ): Promise<Workout> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: workout, error } = await supabase
+      .from('workouts')
+      .insert({
+        user_id: user.id,
+        scheda_id: schedaId,
+        day_id: dayId,
+        performed_at: performedAt,
+        skipped: true,
+        note
+      })
+      .select()
+      .single();
+    if (error) throw error;
+
+    const newWorkout: Workout = {
+      id: workout.id as string,
+      schedaId,
+      dayId,
+      performedAt,
+      skipped: true,
+      note,
+      entries: []
     };
     state.items = [newWorkout, ...state.items];
     return newWorkout;
@@ -129,6 +175,7 @@ function createWorkoutsStore() {
     get loaded() { return state.loaded; },
     load,
     commit,
+    commitSkip,
     getById
   };
 }
