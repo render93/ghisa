@@ -167,7 +167,8 @@ describe('applyEntryResult — linear', () => {
     });
     const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
     expect(result.info.kind).toBe('linear-advance');
-    expect(result.updatedExercise.linearCurrentLoad).toBe(62.5);
+    // 60 + 2.5 = 62.5, arrotondato a step 2 → 62
+    expect(result.updatedExercise.linearCurrentLoad).toBe(62);
     expect(result.updatedExercise.linearConsecutiveFailures).toBe(0);
   });
 
@@ -194,8 +195,8 @@ describe('applyEntryResult — linear', () => {
     });
     const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
     expect(result.info.kind).toBe('linear-deload');
-    // 60 * (1 - 10/100) = 54, rounded to 2.5 → 55
-    expect(result.updatedExercise.linearCurrentLoad).toBe(55);
+    // 60 * (1 - 10/100) = 54, arrotondato a step 2 → 54
+    expect(result.updatedExercise.linearCurrentLoad).toBe(54);
     expect(result.updatedExercise.linearConsecutiveFailures).toBe(0);
   });
 
@@ -315,5 +316,36 @@ describe('applyEntryResult — wave', () => {
     const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
     expect(result.info.kind).toBe('deload-completed');
     expect(result.updatedExercise.pendingDeload).toBe(false);
+  });
+});
+
+import { effectiveRounding } from './progression';
+
+describe('effectiveRounding', () => {
+  it('esercizio wave senza override usa plateRoundingWave', () => {
+    expect(effectiveRounding(baseWave(), DEFAULT_SETTINGS)).toBe(2.5);
+  });
+
+  it('esercizio linear senza override usa plateRoundingLinear', () => {
+    expect(effectiveRounding(baseLinear(), DEFAULT_SETTINGS)).toBe(2);
+  });
+
+  it('override per-esercizio ha precedenza sul default dello schema', () => {
+    expect(effectiveRounding(baseWave({ plateRounding: 1.25 }), DEFAULT_SETTINGS)).toBe(1.25);
+    expect(effectiveRounding(baseLinear({ plateRounding: 5 }), DEFAULT_SETTINGS)).toBe(5);
+  });
+});
+
+describe('applyEntryResult — arrotondamento override', () => {
+  const allOkB1 = (p: { sets: number; reps: number; load: number }): Entry => ({
+    prescribed: p,
+    actualSets: Array.from({ length: p.sets }, () => ({ status: 'ok' as const, reps: p.reps, load: p.load }))
+  });
+
+  it('reset wave usa il rounding override dell esercizio', () => {
+    const ex = baseWave({ waveBaseLoad: 100, waveCurrentWeek: 5, waveCurrentCycle: 1, cycleFailures: 3, plateRounding: 4 });
+    const result = applyEntryResult(ex, allOkB1({ sets: 8, reps: 3, load: 120 }), null, DEFAULT_SETTINGS);
+    // 100 * 0.95 = 95, arrotondato a step 4 → 96
+    expect(result.updatedExercise.waveBaseLoad).toBe(96);
   });
 });
