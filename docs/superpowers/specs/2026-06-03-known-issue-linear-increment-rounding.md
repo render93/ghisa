@@ -1,7 +1,7 @@
 # Bug noto — Disaccoppiamento incremento/arrotondamento nel lineare
 
 Data: 2026-06-03
-Stato: **APERTO** — richiede brainstorming + spec dedicati prima di implementare
+Stato: **RISOLTO** (2026-06-03) — implementata l'opzione C; vedi `2026-06-03-linear-increment-steps-design.md` e il plan `docs/superpowers/plans/2026-06-03-linear-increment-steps.md`. L'incremento lineare è ora "N passi dello step di arrotondamento" (default 1, override per-esercizio): il blocco è impossibile per costruzione.
 Emerso durante: collaudo della Milestone B (arrotondamento ibrido)
 Impatto: **medio-alto** (un esercizio lineare può smettere di progredire in silenzio)
 Indipendenza: **non blocca la Milestone A** (il salto non tocca il motore di progressione)

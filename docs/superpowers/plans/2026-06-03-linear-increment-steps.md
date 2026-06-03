@@ -2,6 +2,12 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Stato:** ✅ **COMPLETATO** (2026-06-03) — tutti e 4 i task eseguiti e verificati a runtime.
+- Task 1 (motore + setting globale): commit `7311dcf` — 32 test verdi.
+- Task 2 (migration + regen types): commit `d7e63ae` — colonna `linear_increment_steps` applicata su Supabase.
+- Task 3 (store + form override): commit `5637bd9` — check 0 errori, build OK.
+- Task 4 (verifica runtime): confermato dall'utente (persistenza override + progressione).
+
 **Goal:** Sostituire l'incremento lineare globale in kg con un incremento espresso in "N passi dello step di arrotondamento" (default 1, con override per-esercizio), eliminando per costruzione il bug di progressione bloccata.
 
 **Architecture:** Il motore di progressione (`applyEntryResult`, ramo lineare) calcola il nuovo carico come `roundTo(vecchio + N × step, step)`, dove `step = effectiveRounding(ex, settings)` e `N = effectiveIncrementSteps(ex, settings)`. `N` viene da un nuovo setting globale `linearIncrementSteps` (default 1) o da un override per-esercizio `Exercise.linearIncrementSteps`. Siccome `N ≥ 1` e `step > 0`, il carico sale **sempre**.
