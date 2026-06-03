@@ -3,6 +3,7 @@
   import { nav } from '$lib/ui/nav';
   import { schedeStore } from '$lib/stores/schede.svelte';
   import { exercisesStore } from '$lib/stores/exercises.svelte';
+  import { workoutsStore } from '$lib/stores/workouts.svelte';
   import { nextPrescription } from '$lib/domain/progression';
   import { settingsStore } from '$lib/stores/settings.svelte';
   import { fmtKg } from '$lib/ui/utils';
@@ -13,6 +14,10 @@
   const scheda = $derived(schedeStore.getById(schedaId));
 
   let pickerOpen = $state(false);
+  let skipOpen = $state(false);
+  let skipNote = $state('');
+  let skipDate = $state(new Date().toISOString().slice(0, 10));
+  let skipping = $state(false);
 
   const exercisesInDay = $derived(
     (day?.exerciseIds || []).map((id) => exercisesStore.getById(id)).filter((e): e is NonNullable<typeof e> => !!e)
@@ -57,6 +62,21 @@
 
   function startWorkout() {
     nav(`/workout/new/?scheda=${schedaId}&day=${dayId}`);
+  }
+
+  async function confirmSkip() {
+    skipping = true;
+    try {
+      const performedAt = new Date(skipDate).toISOString();
+      await workoutsStore.commitSkip(schedaId, dayId, performedAt, skipNote.trim() || null);
+      skipOpen = false;
+      skipNote = '';
+      nav('/storico/');
+    } catch (err) {
+      alert('Errore: ' + (err instanceof Error ? err.message : ''));
+    } finally {
+      skipping = false;
+    }
   }
 </script>
 
@@ -107,6 +127,25 @@
     <button class="btn primary" onclick={startWorkout} disabled={exercisesInDay.length === 0} style="margin-top: 24px;">
       Inizia seduta
     </button>
+    {#if !skipOpen}
+      <button class="btn ghost" onclick={() => (skipOpen = true)} style="margin-top: 12px;">Salta seduta</button>
+    {:else}
+      <div class="card" style="margin-top: 12px;">
+        <p class="view-sub" style="margin: 0 0 12px;">Registra un salto</p>
+        <label class="skip-field">
+          Data
+          <input type="date" bind:value={skipDate} />
+        </label>
+        <label class="skip-field">
+          Nota (opzionale)
+          <textarea bind:value={skipNote} rows="2" placeholder="es. influenza, viaggio…"></textarea>
+        </label>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button class="btn ghost" onclick={() => (skipOpen = false)}>Annulla</button>
+          <button class="btn primary" onclick={confirmSkip} disabled={skipping}>Conferma salto</button>
+        </div>
+      </div>
+    {/if}
     <button class="btn danger" onclick={deleteDay} style="margin-top: 12px;">Elimina giorno</button>
   {/if}
 </div>
@@ -118,4 +157,6 @@
   .btn.primary { background: var(--ink); color: white; }
   .btn.ghost { background: var(--bg-elev); color: var(--ink); border: 1px dashed var(--line-strong); }
   .btn.danger { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .skip-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; letter-spacing: .04em; color: var(--ink-2); margin-bottom: 10px; }
+  .skip-field input, .skip-field textarea { padding: 12px; border: 1px solid var(--line); border-radius: 12px; font-size: 16px; font-family: inherit; }
 </style>
