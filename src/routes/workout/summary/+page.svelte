@@ -28,7 +28,7 @@
 
       let resultInfo: ProgressionResult | null = null;
       let userAction: 'repeat' | null = null;
-      if (anyLogged && ex) {
+      if (!de.skipped && anyLogged && ex) {
         userAction = workoutDraftStore.summaryChoices[de.exerciseId] ?? null;
         const r = applyEntryResult(ex, entry, userAction, settingsStore.data);
         resultInfo = r.info;
@@ -42,7 +42,8 @@
         actualSets: entry.actualSets,
         userAction,
         resultInfo,
-        isDeloadSession: !!entry.isDeloadSession
+        isDeloadSession: !!entry.isDeloadSession,
+        skipped: de.skipped
       });
     }
 
@@ -78,13 +79,17 @@
       <div class="card">
         <div class="card-head">
           <h3 class="card-name">{ex?.name ?? 'Esercizio'}</h3>
-          <span class="badge {status.kind}">{status.text}</span>
+          {#if de.skipped}
+            <span class="badge skip">saltato</span>
+          {:else}
+            <span class="badge {status.kind}">{status.text}</span>
+          {/if}
         </div>
         <div class="card-sub">
           {entry.prescribed.sets}×{entry.prescribed.reps} @ {fmtKg(entry.prescribed.load)}
           {settingsStore.data.weightUnit}
         </div>
-        {#if failed && ex?.scheme === 'wave' && !entry.prescribed.isDeload}
+        {#if failed && ex?.scheme === 'wave' && !entry.prescribed.isDeload && !de.skipped}
           <div style="margin-top: 12px;">
             <p style="font-size: 12px; color: var(--ink-2);">Settimana fallita. Vuoi ripeterla?</p>
             <label style="display: inline-flex; gap: 6px; margin-right: 12px;">
@@ -154,5 +159,9 @@
   .badge.partial {
     background: var(--warn-soft);
     color: var(--warn);
+  }
+  .badge.skip {
+    background: var(--bg-elev);
+    color: var(--ink-2);
   }
 </style>
