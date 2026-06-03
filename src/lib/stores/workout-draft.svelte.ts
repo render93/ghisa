@@ -4,6 +4,7 @@ export type DraftEntry = {
   exerciseId: string;
   prescribed: Entry['prescribed'];
   sets: Entry['actualSets'];
+  skipped: boolean;
 };
 
 export type WorkoutDraft = {
@@ -42,7 +43,8 @@ function createWorkoutDraftStore() {
             status: null as null,
             reps: presc.reps,
             load: presc.load
-          }))
+          })),
+          skipped: false
         };
       }),
       currentExIdx: 0
@@ -74,6 +76,11 @@ function createWorkoutDraftStore() {
     state.summaryChoices[exerciseId] = action;
   }
 
+  function setSkipped(exIdx: number, value: boolean) {
+    if (!state.draft) return;
+    state.draft.exercises[exIdx].skipped = value;
+  }
+
   function cancel() {
     state.draft = null;
     state.summaryChoices = {};
@@ -91,6 +98,7 @@ function createWorkoutDraftStore() {
     nextExercise,
     prevExercise,
     setSummaryChoice,
+    setSkipped,
     cancel
   };
 }
