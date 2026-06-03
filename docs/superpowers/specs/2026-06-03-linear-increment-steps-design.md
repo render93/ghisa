@@ -1,7 +1,7 @@
 # Design — Incremento lineare a "passi di arrotondamento" (opzione C)
 
 Data: 2026-06-03
-Stato: **APPROVATO in brainstorming** — pronto per il plan di implementazione
+Stato: **IMPLEMENTATO** (2026-06-03) — verificato a runtime; vedi plan `docs/superpowers/plans/2026-06-03-linear-increment-steps.md`
 Risolve: `docs/superpowers/specs/2026-06-03-known-issue-linear-increment-rounding.md`
 
 ## Decisione
