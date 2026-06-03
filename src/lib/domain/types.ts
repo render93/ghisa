@@ -6,7 +6,8 @@ export type Settings = {
   waveCycleIncrementPct: number;
   linearIncrementKg: number;
   linearResetPct: number;
-  plateRounding: number;
+  plateRoundingWave: number;
+  plateRoundingLinear: number;
   notificationsEnabled: boolean;
   cycleHoldThreshold: number;
   cycleResetThreshold: number;
@@ -22,6 +23,7 @@ export type Exercise = {
   name: string;
   scheme: Scheme;
   restSeconds: number;
+  plateRounding?: number; // override del passo di arrotondamento; assente = default dello schema
   // wave
   waveBaseLoad?: number;
   waveCurrentWeek?: number;
@@ -99,7 +101,8 @@ export const DEFAULT_SETTINGS: Settings = {
   waveCycleIncrementPct: 2.5,
   linearIncrementKg: 2.5,
   linearResetPct: 10,
-  plateRounding: 2.5,
+  plateRoundingWave: 2.5,
+  plateRoundingLinear: 2,
   notificationsEnabled: false,
   cycleHoldThreshold: 2,
   cycleResetThreshold: 3,

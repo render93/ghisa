@@ -13,6 +13,13 @@ function roundTo(value: number, step: number): number {
   return Math.round(value / step) * step;
 }
 
+export function effectiveRounding(ex: Exercise, settings: Settings): number {
+  return (
+    ex.plateRounding ??
+    (ex.scheme === 'wave' ? settings.plateRoundingWave : settings.plateRoundingLinear)
+  );
+}
+
 export function nextPrescription(ex: Exercise, settings: Settings): Prescription {
   if (ex.scheme === 'wave') {
     const week = ex.waveCurrentWeek ?? 1;
@@ -24,7 +31,7 @@ export function nextPrescription(ex: Exercise, settings: Settings): Prescription
       return {
         sets: Math.max(1, Math.round(pattern.sets * settings.deloadSetsMult)),
         reps: Math.max(1, Math.round(pattern.reps * settings.deloadRepsMult)),
-        load: roundTo(baseLoad * pattern.mult * (settings.deloadLoadPct / 100), settings.plateRounding),
+        load: roundTo(baseLoad * pattern.mult * (settings.deloadLoadPct / 100), effectiveRounding(ex, settings)),
         week,
         cycle,
         isDeload: true
@@ -33,7 +40,7 @@ export function nextPrescription(ex: Exercise, settings: Settings): Prescription
     return {
       sets: pattern.sets,
       reps: pattern.reps,
-      load: roundTo(baseLoad * pattern.mult, settings.plateRounding),
+      load: roundTo(baseLoad * pattern.mult, effectiveRounding(ex, settings)),
       week,
       cycle,
       isDeload: false
@@ -82,7 +89,7 @@ export function applyEntryResult(
     if (allCompleted) {
       updated.linearCurrentLoad = roundTo(
         (ex.linearCurrentLoad ?? 0) + settings.linearIncrementKg,
-        settings.plateRounding
+        effectiveRounding(ex, settings)
       );
       updated.linearConsecutiveFailures = 0;
       return {
@@ -94,7 +101,7 @@ export function applyEntryResult(
     if (fails >= 2) {
       updated.linearCurrentLoad = roundTo(
         (ex.linearCurrentLoad ?? 0) * (1 - settings.linearResetPct / 100),
-        settings.plateRounding
+        effectiveRounding(ex, settings)
       );
       updated.linearConsecutiveFailures = 0;
       return {
@@ -131,7 +138,7 @@ export function applyEntryResult(
     let adjustmentKind: 'normal' | 'hold' | 'reset' = 'normal';
     let newBase = oldBase;
     if (fails >= settings.cycleResetThreshold) {
-      newBase = roundTo(oldBase * (1 - settings.cycleResetPct / 100), settings.plateRounding);
+      newBase = roundTo(oldBase * (1 - settings.cycleResetPct / 100), effectiveRounding(ex, settings));
       adjustmentKind = 'reset';
     } else if (fails >= settings.cycleHoldThreshold) {
       adjustmentKind = 'hold';
