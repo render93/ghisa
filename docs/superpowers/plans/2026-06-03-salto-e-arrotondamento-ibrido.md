@@ -20,10 +20,10 @@
 
 - **Milestone B — Arrotondamento ibrido: ✅ CHIUSA.** Implementata in subagent-driven sul branch `app`, commit `bff6f31`..`1e6c181` (7 commit). `npm run check` = 0 errori, `npm test` = 29/29 verdi. La migration `20260603000000_add_plate_rounding_to_exercises.sql` è stata **applicata a mano dall'utente** su Supabase (verificato a runtime: creazione/modifica esercizi OK).
   - ⚠️ **Bug noto emerso in collaudo, NON bloccante per la Milestone A:** override di arrotondamento per-esercizio e incremento lineare globale sono disaccoppiati → un esercizio lineare può restare bloccato (o saltare troppo). Dettagli, riproduzione e opzioni di fix in `docs/superpowers/specs/2026-06-03-known-issue-linear-increment-rounding.md`. Richiede brainstorming/spec a parte; **non** va affrontato dentro la Milestone A.
-- **Milestone A — Salto allenamento: ⏳ NON INIZIATA.** Pronta per l'esecuzione (anche da un altro agente). Note per chi la esegue:
-  - Parte dal **Task A0**. Come per B0, l'agente **non può** applicare la SQL su Supabase né lanciare `gen types`: crea il file di migration e **allinea a mano `database.types.ts`** alle colonne previste (vedi nota in cima a A0), poi l'utente applicherà la SQL separatamente.
-  - La Milestone A è **indipendente** dall'arrotondamento/incremento: **non** toccare il motore di progressione per il bug noto.
-  - Il modello dati riusa `workouts`/`workout_entries` con flag `skipped` + `note`. Tutti i dettagli e codice sono nei task A0→A7.
+- **Milestone A — Salto allenamento: ✅ CHIUSA (codice).** Implementata in executing-plans sul branch `app`, commit `ae804d2`..`55ca038` (8 commit, A0→A7). `npm run check` = 0 errori (9 warning preesistenti in `ExerciseForm.svelte`/`tsconfig`, non introdotti qui), `npm test` = 29/29 verdi.
+  - ⚠️ **SQL DA APPLICARE A MANO:** la migration `20260603000001_add_skip_columns.sql` **non** è ancora stata eseguita su Supabase. `database.types.ts` è stato allineato a mano (come per B0), ma le colonne `workouts.skipped`/`workouts.note`/`workout_entries.skipped` **non esistono ancora sul DB** → il salto fallirà a runtime finché l'utente non esegue la SQL nello SQL Editor. Step in A0/Step 2.
+  - La Milestone A è rimasta **indipendente** dall'arrotondamento/incremento: il motore di progressione (`progression.ts`) **non è stato toccato**; il bug noto del rounding lineare resta invariato e fuori scope.
+  - Modello dati: `workouts`/`workout_entries` con flag `skipped` + `note`. Verifica manuale a runtime (browser) ancora da fare dall'utente dopo l'applicazione della SQL.
 
 **Convenzioni progetto rilevanti:**
 - Stringhe UI in italiano, concise, minuscole.
@@ -996,9 +996,9 @@ git commit -m "feat(storico): skipped session + skipped entry detail view"
 
 ---
 
-## ⛔ CHECKPOINT FINE MILESTONE A
+## ✅ CHECKPOINT FINE MILESTONE A — CHIUSA codice (2026-06-03)
 
-`npm run check` e `npm test` verdi. Funzionalità complete: arrotondamento ibrido + salto seduta/esercizio. Fermarsi per review finale dell'utente prima di eventuale merge/deploy.
+Completata: commit `ae804d2`..`55ca038` (A0→A7), `npm run check` 0 errori, `npm test` 29/29. Funzionalità complete in codice: arrotondamento ibrido + salto seduta/esercizio. **Resta da fare dall'utente:** (1) applicare `supabase/migrations/20260603000001_add_skip_columns.sql` nello SQL Editor; (2) verifica manuale a runtime (salta esercizio in seduta, salta intera seduta dal giorno scheda, badge in storico lista/dettaglio, progressione invariata per gli esercizi saltati). Fermarsi per review finale dell'utente prima di eventuale merge/deploy.
 
 ---
 
