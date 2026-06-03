@@ -23,9 +23,9 @@ export type Database = {
           linear_current_load: number | null
           linear_target_reps: number | null
           linear_target_sets: number | null
-          plate_rounding: number | null
           name: string
           pending_deload: boolean
+          plate_rounding: number | null
           rest_seconds: number
           scheme: string
           updated_at: string
@@ -42,9 +42,9 @@ export type Database = {
           linear_current_load?: number | null
           linear_target_reps?: number | null
           linear_target_sets?: number | null
-          plate_rounding?: number | null
           name: string
           pending_deload?: boolean
+          plate_rounding?: number | null
           rest_seconds?: number
           scheme: string
           updated_at?: string
@@ -61,9 +61,9 @@ export type Database = {
           linear_current_load?: number | null
           linear_target_reps?: number | null
           linear_target_sets?: number | null
-          plate_rounding?: number | null
           name?: string
           pending_deload?: boolean
+          plate_rounding?: number | null
           rest_seconds?: number
           scheme?: string
           updated_at?: string
