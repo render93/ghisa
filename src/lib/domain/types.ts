@@ -4,7 +4,7 @@ export type Settings = {
   defaultRestSec: number;
   weightUnit: 'kg' | 'lb';
   waveCycleIncrementPct: number;
-  linearIncrementKg: number;
+  linearIncrementSteps: number;
   linearResetPct: number;
   plateRoundingWave: number;
   plateRoundingLinear: number;
@@ -35,6 +35,7 @@ export type Exercise = {
   linearTargetSets?: number;
   linearTargetReps?: number;
   linearConsecutiveFailures?: number;
+  linearIncrementSteps?: number; // override del numero di passi per advance; assente = settings.linearIncrementSteps
 };
 
 export type Prescription = {
@@ -99,7 +100,7 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultRestSec: 180,
   weightUnit: 'kg',
   waveCycleIncrementPct: 2.5,
-  linearIncrementKg: 2.5,
+  linearIncrementSteps: 1,
   linearResetPct: 10,
   plateRoundingWave: 2.5,
   plateRoundingLinear: 2,
