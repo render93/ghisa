@@ -12,6 +12,19 @@
 
 **Spec di riferimento:** `docs/superpowers/specs/2026-06-03-salto-e-arrotondamento-ibrido-design.md`
 
+---
+
+## Stato esecuzione
+
+> Aggiornato: 2026-06-03
+
+- **Milestone B — Arrotondamento ibrido: ✅ CHIUSA.** Implementata in subagent-driven sul branch `app`, commit `bff6f31`..`1e6c181` (7 commit). `npm run check` = 0 errori, `npm test` = 29/29 verdi. La migration `20260603000000_add_plate_rounding_to_exercises.sql` è stata **applicata a mano dall'utente** su Supabase (verificato a runtime: creazione/modifica esercizi OK).
+  - ⚠️ **Bug noto emerso in collaudo, NON bloccante per la Milestone A:** override di arrotondamento per-esercizio e incremento lineare globale sono disaccoppiati → un esercizio lineare può restare bloccato (o saltare troppo). Dettagli, riproduzione e opzioni di fix in `docs/superpowers/specs/2026-06-03-known-issue-linear-increment-rounding.md`. Richiede brainstorming/spec a parte; **non** va affrontato dentro la Milestone A.
+- **Milestone A — Salto allenamento: ⏳ NON INIZIATA.** Pronta per l'esecuzione (anche da un altro agente). Note per chi la esegue:
+  - Parte dal **Task A0**. Come per B0, l'agente **non può** applicare la SQL su Supabase né lanciare `gen types`: crea il file di migration e **allinea a mano `database.types.ts`** alle colonne previste (vedi nota in cima a A0), poi l'utente applicherà la SQL separatamente.
+  - La Milestone A è **indipendente** dall'arrotondamento/incremento: **non** toccare il motore di progressione per il bug noto.
+  - Il modello dati riusa `workouts`/`workout_entries` con flag `skipped` + `note`. Tutti i dettagli e codice sono nei task A0→A7.
+
 **Convenzioni progetto rilevanti:**
 - Stringhe UI in italiano, concise, minuscole.
 - `npm run check` = `svelte-kit sync && svelte-check` (usare sempre questo localmente).
@@ -406,9 +419,9 @@ git commit -m "feat(workout): use effective plate rounding for load input step"
 
 ---
 
-## ⛔ CHECKPOINT FINE MILESTONE B
+## ✅ CHECKPOINT FINE MILESTONE B — CHIUSA (2026-06-03)
 
-Eseguire `npm run check` e `npm test` (entrambi verdi), poi **fermarsi e attendere l'ok dell'utente** prima di iniziare la Milestone A.
+Completata: commit `bff6f31`..`1e6c181`, `npm run check` 0 errori, `npm test` 29/29, SQL applicata dall'utente. Bug noto registrato in `docs/superpowers/specs/2026-06-03-known-issue-linear-increment-rounding.md` (fuori scope qui). Procedere con la Milestone A.
 
 ---
 
