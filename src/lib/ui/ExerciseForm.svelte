@@ -16,6 +16,7 @@
   let linearTargetSets = $state(exercise.linearTargetSets ?? 3);
   let linearTargetReps = $state(exercise.linearTargetReps ?? 8);
   let plateRounding = $state<number | undefined>(exercise.plateRounding);
+  let linearIncrementSteps = $state<number | undefined>(exercise.linearIncrementSteps);
   const stepValue = $derived(
     plateRounding && plateRounding > 0
       ? plateRounding
@@ -47,7 +48,8 @@
         linearCurrentLoad,
         linearTargetSets,
         linearTargetReps,
-        linearConsecutiveFailures: exercise.linearConsecutiveFailures ?? 0
+        linearConsecutiveFailures: exercise.linearConsecutiveFailures ?? 0,
+        linearIncrementSteps: linearIncrementSteps && linearIncrementSteps > 0 ? linearIncrementSteps : undefined
       });
     }
   }
@@ -89,6 +91,10 @@
     <label>
       Reps target
       <input type="number" bind:value={linearTargetReps} min="1" />
+    </label>
+    <label>
+      Passi per advance (vuoto = default impostazioni)
+      <input type="number" min="1" step="1" placeholder={String(settingsStore.data.linearIncrementSteps)} bind:value={linearIncrementSteps} />
     </label>
   {/if}
 
