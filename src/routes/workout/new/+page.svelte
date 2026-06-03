@@ -96,11 +96,11 @@
     </div>
 
     <button type="button" class="btn skip-toggle" class:on={currentEntry.skipped} onclick={toggleSkip}>
-      {currentEntry.skipped ? 'annulla salto' : 'salta esercizio'}
+      {currentEntry.skipped ? 'Annulla salto' : 'Salta esercizio'}
     </button>
 
     {#if currentEntry.skipped}
-      <div class="card skipped-note">esercizio saltato — non inciderà sui pesi</div>
+      <div class="card skipped-note">Esercizio saltato — non inciderà sui pesi</div>
     {:else}
       {#each currentEntry.sets as set, i (i)}
         {@const closed = set.status !== null}
