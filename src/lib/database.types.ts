@@ -21,6 +21,7 @@ export type Database = {
           id: string
           linear_consecutive_failures: number
           linear_current_load: number | null
+          linear_increment_steps: number | null
           linear_target_reps: number | null
           linear_target_sets: number | null
           name: string
@@ -40,6 +41,7 @@ export type Database = {
           id?: string
           linear_consecutive_failures?: number
           linear_current_load?: number | null
+          linear_increment_steps?: number | null
           linear_target_reps?: number | null
           linear_target_sets?: number | null
           name: string
@@ -59,6 +61,7 @@ export type Database = {
           id?: string
           linear_consecutive_failures?: number
           linear_current_load?: number | null
+          linear_increment_steps?: number | null
           linear_target_reps?: number | null
           linear_target_sets?: number | null
           name?: string
