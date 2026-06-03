@@ -16,29 +16,39 @@
     <p>Seduta non trovata.</p>
   {:else}
     <h2 class="view-title">{fmtDate(workout.performedAt)}</h2>
-    <p class="view-sub">{workout.entries.length} esercizi</p>
+    <p class="view-sub">{workout.skipped ? 'seduta saltata' : `${workout.entries.length} esercizi`}</p>
 
-    {#each workout.entries as entry (entry.id)}
-      {@const ex = exercisesStore.getById(entry.exerciseId)}
+    {#if workout.skipped}
       <div class="card">
-        <h3 class="card-name">{ex?.name ?? 'Esercizio eliminato'}</h3>
-        <div class="card-sub">
-          {entry.prescribed.sets}×{entry.prescribed.reps} @ {fmtKg(entry.prescribed.load)} {settingsStore.data.weightUnit}
-          {#if entry.isDeloadSession}<span class="badge deload">DELOAD</span>{/if}
-        </div>
-        <div style="margin-top: 12px;">
-          {#each entry.actualSets as s, i (i)}
-            <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 13px;">
-              <span>{i + 1}.</span>
-              <span>{s.reps} × {fmtKg(s.load)}</span>
-              <span class:ok={s.status === 'ok'} class:fail={s.status === 'fail'}>
-                {s.status === 'ok' ? '✓' : s.status === 'fail' ? '✕' : '—'}
-              </span>
-            </div>
-          {/each}
-        </div>
+        <span class="badge skip">saltata</span>
+        {#if workout.note}<p style="margin: 12px 0 0; font-size: 14px; color: var(--ink-2);">{workout.note}</p>{/if}
       </div>
-    {/each}
+    {:else}
+      {#each workout.entries as entry (entry.id)}
+        {@const ex = exercisesStore.getById(entry.exerciseId)}
+        <div class="card">
+          <h3 class="card-name">{ex?.name ?? 'Esercizio eliminato'}</h3>
+          <div class="card-sub">
+            {entry.prescribed.sets}×{entry.prescribed.reps} @ {fmtKg(entry.prescribed.load)} {settingsStore.data.weightUnit}
+            {#if entry.isDeloadSession}<span class="badge deload">DELOAD</span>{/if}
+            {#if entry.skipped}<span class="badge skip">saltato</span>{/if}
+          </div>
+          {#if !entry.skipped}
+            <div style="margin-top: 12px;">
+              {#each entry.actualSets as s, i (i)}
+                <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 13px;">
+                  <span>{i + 1}.</span>
+                  <span>{s.reps} × {fmtKg(s.load)}</span>
+                  <span class:ok={s.status === 'ok'} class:fail={s.status === 'fail'}>
+                    {s.status === 'ok' ? '✓' : s.status === 'fail' ? '✕' : '—'}
+                  </span>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/each}
+    {/if}
   {/if}
 </div>
 
@@ -47,4 +57,15 @@
   .ok { color: var(--success); }
   .fail { color: var(--accent); }
   .badge.deload { background: var(--warn); color: white; padding: 2px 8px; font-size: 9px; border-radius: 6px; margin-left: 8px; }
+  .badge.skip {
+    background: var(--bg-elev);
+    color: var(--ink-2);
+    padding: 2px 8px;
+    font-size: 9px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-left: 8px;
+  }
 </style>
