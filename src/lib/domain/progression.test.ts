@@ -155,7 +155,7 @@ describe('entryStatus', () => {
 import { applyEntryResult } from './progression';
 
 describe('applyEntryResult — linear', () => {
-  it('all sets ok at target reps → advance load by linearIncrementKg', () => {
+  it('all sets ok → advance di N×step (default N=1, step 2 → +2)', () => {
     const ex = baseLinear({ linearCurrentLoad: 60 });
     const e = entry({
       prescribed: { sets: 3, reps: 8, load: 60 },
@@ -167,9 +167,53 @@ describe('applyEntryResult — linear', () => {
     });
     const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
     expect(result.info.kind).toBe('linear-advance');
-    // 60 + 2.5 = 62.5, arrotondato a step 2 → 62
+    // 60 + 1×2 = 62
     expect(result.updatedExercise.linearCurrentLoad).toBe(62);
     expect(result.updatedExercise.linearConsecutiveFailures).toBe(0);
+  });
+
+  it('regressione bug: load 40, step 5 (override), N=1 globale → 45', () => {
+    const ex = baseLinear({ linearCurrentLoad: 40, plateRounding: 5 });
+    const e = entry({
+      prescribed: { sets: 4, reps: 8, load: 40 },
+      actualSets: [
+        { status: 'ok', reps: 8, load: 40 },
+        { status: 'ok', reps: 8, load: 40 },
+        { status: 'ok', reps: 8, load: 40 },
+        { status: 'ok', reps: 8, load: 40 }
+      ]
+    });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    expect(result.info.kind).toBe('linear-advance');
+    expect(result.updatedExercise.linearCurrentLoad).toBe(45);
+  });
+
+  it('override per-esercizio: N=2, step 2.5 → +5', () => {
+    const ex = baseLinear({ linearCurrentLoad: 50, plateRounding: 2.5, linearIncrementSteps: 2 });
+    const e = entry({
+      prescribed: { sets: 3, reps: 8, load: 50 },
+      actualSets: [
+        { status: 'ok', reps: 8, load: 50 },
+        { status: 'ok', reps: 8, load: 50 },
+        { status: 'ok', reps: 8, load: 50 }
+      ]
+    });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    expect(result.updatedExercise.linearCurrentLoad).toBe(55);
+  });
+
+  it('auto-correzione fuori griglia: load 42, step 5, N=1 → 45', () => {
+    const ex = baseLinear({ linearCurrentLoad: 42, plateRounding: 5 });
+    const e = entry({
+      prescribed: { sets: 3, reps: 8, load: 42 },
+      actualSets: [
+        { status: 'ok', reps: 8, load: 42 },
+        { status: 'ok', reps: 8, load: 42 },
+        { status: 'ok', reps: 8, load: 42 }
+      ]
+    });
+    const result = applyEntryResult(ex, e, null, DEFAULT_SETTINGS);
+    expect(result.updatedExercise.linearCurrentLoad).toBe(45);
   });
 
   it('one fail → linear-repeat, increment counter', () => {

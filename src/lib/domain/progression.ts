@@ -20,6 +20,10 @@ export function effectiveRounding(ex: Exercise, settings: Settings): number {
   );
 }
 
+export function effectiveIncrementSteps(ex: Exercise, settings: Settings): number {
+  return ex.linearIncrementSteps ?? settings.linearIncrementSteps;
+}
+
 export function nextPrescription(ex: Exercise, settings: Settings): Prescription {
   if (ex.scheme === 'wave') {
     const week = ex.waveCurrentWeek ?? 1;
@@ -87,10 +91,9 @@ export function applyEntryResult(
       (s) => s.status === 'ok' && (s.reps || 0) >= target
     );
     if (allCompleted) {
-      updated.linearCurrentLoad = roundTo(
-        (ex.linearCurrentLoad ?? 0) + settings.linearIncrementKg,
-        effectiveRounding(ex, settings)
-      );
+      const step = effectiveRounding(ex, settings);
+      const steps = effectiveIncrementSteps(ex, settings);
+      updated.linearCurrentLoad = roundTo((ex.linearCurrentLoad ?? 0) + steps * step, step);
       updated.linearConsecutiveFailures = 0;
       return {
         updatedExercise: updated,

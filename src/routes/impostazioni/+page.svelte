@@ -16,7 +16,7 @@
     deloadLoadPct: 'Carico durante un deload, in % del prescritto.',
     deloadSetsMult: 'Moltiplicatore serie durante un deload (es. 0.5 = metà serie).',
     deloadRepsMult: 'Moltiplicatore reps durante un deload (es. 0.8 = -20%).',
-    linearIncrementKg: 'Quanto aumentare il carico dopo una sessione completata pienamente.',
+    linearIncrementSteps: 'Di quanti passi di arrotondamento sale il carico dopo una sessione completata pienamente (1 = un passo). Lo "step" è l\'arrotondamento dischi, globale o per-esercizio.',
     linearResetPct: 'Quanto ridurre il carico dopo due fallimenti consecutivi.'
   };
 
@@ -193,11 +193,11 @@
 
     <div class="field">
       <div class="field-head">
-        <label for="f-linearIncrementKg">Incremento per advance (kg)</label>
-        {@render helpIcon('linearIncrementKg')}
+        <label for="f-linearIncrementSteps">Incremento per advance (passi)</label>
+        {@render helpIcon('linearIncrementSteps')}
       </div>
-      <input id="f-linearIncrementKg" type="number" bind:value={editing.linearIncrementKg} step="0.5" min="0" />
-      {@render helpText('linearIncrementKg')}
+      <input id="f-linearIncrementSteps" type="number" bind:value={editing.linearIncrementSteps} step="1" min="1" />
+      {@render helpText('linearIncrementSteps')}
     </div>
 
     <div class="field">
