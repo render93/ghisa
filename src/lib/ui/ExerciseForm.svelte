@@ -15,13 +15,22 @@
   let linearCurrentLoad = $state(exercise.linearCurrentLoad ?? 0);
   let linearTargetSets = $state(exercise.linearTargetSets ?? 3);
   let linearTargetReps = $state(exercise.linearTargetReps ?? 8);
+  let plateRounding = $state<number | undefined>(exercise.plateRounding);
+  const stepValue = $derived(
+    plateRounding && plateRounding > 0
+      ? plateRounding
+      : scheme === 'wave'
+        ? settingsStore.data.plateRoundingWave
+        : settingsStore.data.plateRoundingLinear
+  );
 
   function submit(e: SubmitEvent) {
     e.preventDefault();
     const base: Omit<Exercise, 'id'> = {
       name: name.trim(),
       scheme,
-      restSeconds
+      restSeconds,
+      plateRounding: plateRounding && plateRounding > 0 ? plateRounding : undefined
     };
     if (scheme === 'wave') {
       onsave({
@@ -66,12 +75,12 @@
   {#if scheme === 'wave'}
     <label>
       Carico base ({settingsStore.data.weightUnit})
-      <input type="number" bind:value={waveBaseLoad} min="0" step={settingsStore.data.plateRounding} />
+      <input type="number" bind:value={waveBaseLoad} min="0" step={stepValue} />
     </label>
   {:else}
     <label>
       Carico iniziale ({settingsStore.data.weightUnit})
-      <input type="number" bind:value={linearCurrentLoad} min="0" step={settingsStore.data.plateRounding} />
+      <input type="number" bind:value={linearCurrentLoad} min="0" step={stepValue} />
     </label>
     <label>
       Serie target
@@ -82,6 +91,11 @@
       <input type="number" bind:value={linearTargetReps} min="1" />
     </label>
   {/if}
+
+  <label>
+    Arrotondamento dischi (vuoto = default schema)
+    <input type="number" min="0" step="0.25" placeholder={String(stepValue)} bind:value={plateRounding} />
+  </label>
 
   <div class="actions">
     <button type="button" class="btn secondary" onclick={oncancel}>Annulla</button>
