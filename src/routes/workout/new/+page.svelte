@@ -6,7 +6,7 @@
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
   import { workoutDraftStore } from '$lib/stores/workout-draft.svelte';
-  import { nextPrescription } from '$lib/domain/progression';
+  import { nextPrescription, effectiveRounding } from '$lib/domain/progression';
   import { fmtKg } from '$lib/ui/utils';
   import { startRest } from '$lib/ui/rest-timer-bus';
   import type { Exercise } from '$lib/domain/types';
@@ -109,7 +109,7 @@
           <input
             type="number"
             min="0"
-            step={settingsStore.data.plateRounding}
+            step={effectiveRounding(currentExercise, settingsStore.data)}
             value={set.load}
             disabled={closed}
             oninput={(e) => updateLoad(i, +(e.currentTarget as HTMLInputElement).value)}
