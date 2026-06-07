@@ -8,6 +8,10 @@ describe('fmtDuration', () => {
     expect(fmtDuration(59 * 60 + 29)).toBe('59 min');
   });
 
+  it('al confine 59m30s arrotonda a 1h 0m', () => {
+    expect(fmtDuration(59 * 60 + 30)).toBe('1h 0m');
+  });
+
   it('durate da un ora in su come Hh Mm', () => {
     expect(fmtDuration(60 * 60)).toBe('1h 0m');
     expect(fmtDuration(83 * 60)).toBe('1h 23m');
