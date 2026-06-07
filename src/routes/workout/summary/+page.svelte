@@ -20,7 +20,7 @@
 
   async function commit() {
     if (!draft) return;
-    const entries: Parameters<typeof workoutsStore.commit>[3] = [];
+    const entries: Parameters<typeof workoutsStore.commit>[4] = [];
     for (const de of draft.exercises) {
       const ex = exercisesStore.getById(de.exerciseId);
       const entry = entryFromDraft(de);
@@ -47,8 +47,13 @@
       });
     }
 
+    const durationSec = Math.max(
+      0,
+      Math.round((Date.now() - new Date(draft.date).getTime()) / 1000)
+    );
+
     try {
-      await workoutsStore.commit(draft.schedaId, draft.dayId, draft.date, entries);
+      await workoutsStore.commit(draft.schedaId, draft.dayId, draft.date, durationSec, entries);
       workoutDraftStore.cancel();
       nav('/storico/');
     } catch (err) {
