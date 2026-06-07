@@ -36,6 +36,7 @@ export function nextPrescription(ex: Exercise, settings: Settings): Prescription
         sets: Math.max(1, Math.round(pattern.sets * settings.deloadSetsMult)),
         reps: Math.max(1, Math.round(pattern.reps * settings.deloadRepsMult)),
         load: roundTo(baseLoad * pattern.mult * (settings.deloadLoadPct / 100), effectiveRounding(ex, settings)),
+        barWeight: ex.barWeight ?? 0,
         week,
         cycle,
         isDeload: true
@@ -45,6 +46,7 @@ export function nextPrescription(ex: Exercise, settings: Settings): Prescription
       sets: pattern.sets,
       reps: pattern.reps,
       load: roundTo(baseLoad * pattern.mult, effectiveRounding(ex, settings)),
+      barWeight: ex.barWeight ?? 0,
       week,
       cycle,
       isDeload: false
@@ -55,6 +57,7 @@ export function nextPrescription(ex: Exercise, settings: Settings): Prescription
     sets: ex.linearTargetSets ?? 0,
     reps: ex.linearTargetReps ?? 0,
     load: ex.linearCurrentLoad ?? 0,
+    barWeight: ex.barWeight ?? 0,
     consecutiveFails: ex.linearConsecutiveFailures ?? 0
   };
 }

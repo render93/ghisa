@@ -380,6 +380,27 @@ describe('effectiveRounding', () => {
   });
 });
 
+describe('nextPrescription — barWeight pass-through', () => {
+  it('wave: barWeight passa intatto e non cambia il carico dischi', () => {
+    const noBar = nextPrescription(baseWave(), DEFAULT_SETTINGS);
+    const withBar = nextPrescription(baseWave({ barWeight: 20 }), DEFAULT_SETTINGS);
+    expect(withBar.load).toBe(noBar.load);
+    expect(withBar.barWeight).toBe(20);
+  });
+
+  it('linear: barWeight passa intatto e non cambia il carico dischi', () => {
+    const noBar = nextPrescription(baseLinear(), DEFAULT_SETTINGS);
+    const withBar = nextPrescription(baseLinear({ barWeight: 20 }), DEFAULT_SETTINGS);
+    expect(withBar.load).toBe(noBar.load);
+    expect(withBar.barWeight).toBe(20);
+  });
+
+  it('barWeight default 0 quando l esercizio non lo ha', () => {
+    expect(nextPrescription(baseWave(), DEFAULT_SETTINGS).barWeight).toBe(0);
+    expect(nextPrescription(baseLinear(), DEFAULT_SETTINGS).barWeight).toBe(0);
+  });
+});
+
 describe('applyEntryResult — arrotondamento override', () => {
   const allOkB1 = (p: { sets: number; reps: number; load: number }): Entry => ({
     prescribed: p,

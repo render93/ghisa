@@ -24,6 +24,7 @@ export type Exercise = {
   scheme: Scheme;
   restSeconds: number;
   plateRounding?: number; // override del passo di arrotondamento; assente = default dello schema
+  barWeight?: number; // peso bilanciere (kg): concorre al totale ma esente da arrotondamento; assente = 0
   // wave
   waveBaseLoad?: number;
   waveCurrentWeek?: number;
@@ -41,7 +42,8 @@ export type Exercise = {
 export type Prescription = {
   sets: number;
   reps: number;
-  load: number;
+  load: number; // peso dischi (lo step di arrotondamento si applica qui)
+  barWeight?: number; // snapshot del peso bilanciere al momento della prescrizione; totale = load + barWeight
   week?: number;
   cycle?: number;
   isDeload?: boolean;

@@ -16,6 +16,7 @@
   let linearTargetSets = $state(exercise.linearTargetSets ?? 3);
   let linearTargetReps = $state(exercise.linearTargetReps ?? 8);
   let plateRounding = $state<number | undefined>(exercise.plateRounding);
+  let barWeight = $state<number | undefined>(exercise.barWeight);
   let linearIncrementSteps = $state<number | undefined>(exercise.linearIncrementSteps);
   const stepValue = $derived(
     plateRounding && plateRounding > 0
@@ -31,7 +32,8 @@
       name: name.trim(),
       scheme,
       restSeconds,
-      plateRounding: plateRounding && plateRounding > 0 ? plateRounding : undefined
+      plateRounding: plateRounding && plateRounding > 0 ? plateRounding : undefined,
+      barWeight: barWeight && barWeight > 0 ? barWeight : undefined
     };
     if (scheme === 'wave') {
       onsave({
@@ -101,6 +103,11 @@
   <label>
     Arrotondamento dischi (vuoto = default schema)
     <input type="number" min="0" step="0.25" placeholder={String(stepValue)} bind:value={plateRounding} />
+  </label>
+
+  <label>
+    Peso bilanciere {settingsStore.data.weightUnit} (vuoto = nessuno)
+    <input type="number" min="0" step="0.5" placeholder="0" bind:value={barWeight} />
   </label>
 
   <div class="actions">

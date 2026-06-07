@@ -2,7 +2,7 @@
   import { nav } from '$lib/ui/nav';
   import { workoutsStore } from '$lib/stores/workouts.svelte';
   import { schedeStore } from '$lib/stores/schede.svelte';
-  import { fmtDate } from '$lib/ui/utils';
+  import { fmtDate, fmtDuration } from '$lib/ui/utils';
 </script>
 
 <div class="view">
@@ -23,7 +23,7 @@
       {#if w.skipped}
         <div class="card-sub"><span class="badge skip">saltata</span> {fmtDate(w.performedAt)}{w.note ? ` · ${w.note}` : ''}</div>
       {:else}
-        <div class="card-sub">{fmtDate(w.performedAt)} · {w.entries.length} esercizi</div>
+        <div class="card-sub">{fmtDate(w.performedAt)} · {w.entries.length} esercizi{w.durationSec != null ? ` · ${fmtDuration(w.durationSec)}` : ''}</div>
       {/if}
     </button>
   {/each}

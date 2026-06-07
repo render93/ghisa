@@ -33,3 +33,9 @@ export function fmtSec(s: number): string {
   s = Math.max(0, Math.round(s));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
+
+export function fmtDuration(sec: number): string {
+  const m = Math.round(sec / 60);
+  if (m < 60) return `${m} min`;
+  return `${Math.floor(m / 60)}h ${m % 60}m`;
+}

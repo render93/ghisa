@@ -20,7 +20,7 @@
 
   async function commit() {
     if (!draft) return;
-    const entries: Parameters<typeof workoutsStore.commit>[3] = [];
+    const entries: Parameters<typeof workoutsStore.commit>[4] = [];
     for (const de of draft.exercises) {
       const ex = exercisesStore.getById(de.exerciseId);
       const entry = entryFromDraft(de);
@@ -47,8 +47,13 @@
       });
     }
 
+    const durationSec = Math.max(
+      0,
+      Math.round((Date.now() - new Date(draft.date).getTime()) / 1000)
+    );
+
     try {
-      await workoutsStore.commit(draft.schedaId, draft.dayId, draft.date, entries);
+      await workoutsStore.commit(draft.schedaId, draft.dayId, draft.date, durationSec, entries);
       workoutDraftStore.cancel();
       nav('/storico/');
     } catch (err) {
@@ -74,6 +79,7 @@
     {#each draft.exercises as de (de.exerciseId)}
       {@const ex = exercisesStore.getById(de.exerciseId)}
       {@const entry = entryFromDraft(de)}
+      {@const bar = entry.prescribed.barWeight ?? 0}
       {@const status = entryStatus(entry)}
       {@const failed = weekWasFailed(entry)}
       <div class="card">
@@ -86,8 +92,8 @@
           {/if}
         </div>
         <div class="card-sub">
-          {entry.prescribed.sets}×{entry.prescribed.reps} @ {fmtKg(entry.prescribed.load)}
-          {settingsStore.data.weightUnit}
+          {entry.prescribed.sets}×{entry.prescribed.reps} @ {fmtKg(entry.prescribed.load + bar)}
+          {settingsStore.data.weightUnit}{#if bar > 0} · {fmtKg(entry.prescribed.load)} dischi{/if}
         </div>
         {#if failed && ex?.scheme === 'wave' && !entry.prescribed.isDeload && !de.skipped}
           <div style="margin-top: 12px;">

@@ -4,7 +4,7 @@
   import { workoutsStore } from '$lib/stores/workouts.svelte';
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
-  import { fmtDate, fmtKg } from '$lib/ui/utils';
+  import { fmtDate, fmtKg, fmtDuration } from '$lib/ui/utils';
 
   const id = $derived(page.params.id);
   const workout = $derived(id ? workoutsStore.getById(id) : undefined);
@@ -16,7 +16,7 @@
     <p>Seduta non trovata.</p>
   {:else}
     <h2 class="view-title">{fmtDate(workout.performedAt)}</h2>
-    <p class="view-sub">{workout.skipped ? 'seduta saltata' : `${workout.entries.length} esercizi`}</p>
+    <p class="view-sub">{workout.skipped ? 'seduta saltata' : `${workout.entries.length} esercizi${workout.durationSec != null ? ` · ${fmtDuration(workout.durationSec)}` : ''}`}</p>
 
     {#if workout.skipped}
       <div class="card">
@@ -26,10 +26,11 @@
     {:else}
       {#each workout.entries as entry (entry.id)}
         {@const ex = exercisesStore.getById(entry.exerciseId)}
+        {@const bar = entry.prescribed.barWeight ?? 0}
         <div class="card">
           <h3 class="card-name">{ex?.name ?? 'Esercizio eliminato'}</h3>
           <div class="card-sub">
-            {entry.prescribed.sets}×{entry.prescribed.reps} @ {fmtKg(entry.prescribed.load)} {settingsStore.data.weightUnit}
+            {entry.prescribed.sets}×{entry.prescribed.reps} @ {fmtKg(entry.prescribed.load + bar)} {settingsStore.data.weightUnit}{#if bar > 0} · {fmtKg(entry.prescribed.load)} dischi{/if}
             {#if entry.isDeloadSession}<span class="badge deload">DELOAD</span>{/if}
             {#if entry.skipped}<span class="badge skip">saltato</span>{/if}
           </div>
@@ -38,7 +39,7 @@
               {#each entry.actualSets as s, i (i)}
                 <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 13px;">
                   <span>{i + 1}.</span>
-                  <span>{s.reps} × {fmtKg(s.load)}</span>
+                  <span>{s.reps} × {fmtKg(s.load + bar)}</span>
                   <span class:ok={s.status === 'ok'} class:fail={s.status === 'fail'}>
                     {s.status === 'ok' ? '✓' : s.status === 'fail' ? '✕' : '—'}
                   </span>

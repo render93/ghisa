@@ -35,6 +35,7 @@
   const currentExercise = $derived(
     currentEntry ? exercisesStore.getById(currentEntry.exerciseId) : undefined
   );
+  const bar = $derived(currentEntry?.prescribed.barWeight ?? 0);
 
   function logSet(idx: number, status: 'ok' | 'fail') {
     if (!draft) return;
@@ -90,8 +91,9 @@
     <div class="card">
       <div class="prescription" style="font-size: 14px; color: var(--ink-2);">
         Target: <strong>{currentEntry.prescribed.sets}×{currentEntry.prescribed.reps}</strong>
-        @ <strong>{fmtKg(currentEntry.prescribed.load)} {settingsStore.data.weightUnit}</strong>
+        @ <strong>{fmtKg(currentEntry.prescribed.load + bar)} {settingsStore.data.weightUnit}</strong>
         {#if currentEntry.prescribed.isDeload}<span class="card-badge deload">DELOAD</span>{/if}
+        {#if bar > 0}<span class="bar-note">{fmtKg(currentEntry.prescribed.load)} dischi + {fmtKg(bar)} bar</span>{/if}
       </div>
     </div>
 
@@ -117,14 +119,14 @@
             />
           </label>
           <label class="field">
-            <span class="field-label">KG</span>
+            <span class="field-label">KG{#if bar > 0} (tot){/if}</span>
             <input
               type="number"
               min="0"
               step={effectiveRounding(currentExercise, settingsStore.data)}
-              value={set.load}
+              value={set.load + bar}
               disabled={closed}
-              oninput={(e) => updateLoad(i, +(e.currentTarget as HTMLInputElement).value)}
+              oninput={(e) => updateLoad(i, Math.max(0, +(e.currentTarget as HTMLInputElement).value - bar))}
             />
           </label>
           <button
@@ -161,6 +163,13 @@
 {/if}
 
 <style>
+  .bar-note {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+  }
   .set-row {
     display: grid;
     grid-template-columns: 28px 1fr 1fr auto auto;
