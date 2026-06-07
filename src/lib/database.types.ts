@@ -215,6 +215,7 @@ export type Database = {
         Row: {
           created_at: string
           day_id: string | null
+          duration_sec: number | null
           id: string
           note: string | null
           performed_at: string
@@ -225,6 +226,7 @@ export type Database = {
         Insert: {
           created_at?: string
           day_id?: string | null
+          duration_sec?: number | null
           id?: string
           note?: string | null
           performed_at: string
@@ -235,6 +237,7 @@ export type Database = {
         Update: {
           created_at?: string
           day_id?: string | null
+          duration_sec?: number | null
           id?: string
           note?: string | null
           performed_at?: string
