@@ -26,7 +26,7 @@
       <div class="prescription">
         <span class="sets-x-reps">{p.sets}×{p.reps}</span>
         <span class="at">@</span>
-        <span class="load">{fmtKg(p.load)}<span class="unit">{settingsStore.data.weightUnit}</span></span>
+        <span class="load">{fmtKg(p.load + (p.barWeight ?? 0))}<span class="unit">{settingsStore.data.weightUnit}</span></span>
       </div>
       {#if ex.scheme === 'wave'}
         <div class="meta">

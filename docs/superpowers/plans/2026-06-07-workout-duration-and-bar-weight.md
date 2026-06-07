@@ -1163,7 +1163,7 @@ git commit -m "feat(storico): totale dischi+bar nel dettaglio seduta"
 > **⚠️ Gate runtime:** la migration `supabase/migrations/20260607000001_add_bar_weight_to_exercises.sql` va applicata a mano nell'SQL Editor di Supabase (oltre a quella di M1).
 > **Verifica runtime** (richiede entrambe le SQL applicate): crea un esercizio con peso bilanciere, esegui una seduta, controlla che target/log/riepilogo/storico mostrino il totale corretto e che i dischi avanzino come prima.
 >
-> **🔎 Gap emerso in review (fuori scope del piano):** `src/routes/esercizi/+page.svelte` mostra `fmtKg(p.load)` (solo dischi) dalla `nextPrescription`. Per esercizi con bilanciere la lista esercizi (riferimento principale del "prossimo target") mostrerebbe il solo peso dischi mentre seduta/riepilogo/storico mostrano il totale → incoerenza. Fix da una riga: `fmtKg(p.load + (p.barWeight ?? 0))`. Da decidere se includerlo (non era nella scope dei file del piano).
+> **🔎 Gap emerso in review (fuori scope del piano) — RISOLTO 2026-06-07:** `src/routes/esercizi/+page.svelte` mostrava `fmtKg(p.load)` (solo dischi) dalla `nextPrescription`. Per esercizi con bilanciere la lista esercizi (riferimento principale del "prossimo target") mostrava il solo peso dischi mentre seduta/riepilogo/storico mostrano il totale → incoerenza. Risolto con `fmtKg(p.load + (p.barWeight ?? 0))` (totale, coerente con le altre schermate; scelta utente: totale senza breakdown).
 
 ---
 
