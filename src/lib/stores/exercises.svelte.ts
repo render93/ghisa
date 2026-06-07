@@ -9,6 +9,7 @@ type DbExercise = {
   scheme: 'wave' | 'linear';
   rest_seconds: number;
   plate_rounding: number | null;
+  bar_weight: number | null;
   linear_increment_steps: number | null;
   wave_base_load: number | null;
   wave_current_week: number | null;
@@ -28,6 +29,7 @@ function dbToDomain(row: DbExercise): Exercise {
     scheme: row.scheme,
     restSeconds: row.rest_seconds,
     plateRounding: row.plate_rounding ?? undefined,
+    barWeight: row.bar_weight ?? undefined,
     linearIncrementSteps: row.linear_increment_steps ?? undefined,
     waveBaseLoad: row.wave_base_load ?? undefined,
     waveCurrentWeek: row.wave_current_week ?? undefined,
@@ -49,6 +51,7 @@ function domainToDb(ex: Exercise, userId: string): Omit<DbExercise, 'id'> & { id
     scheme: ex.scheme,
     rest_seconds: ex.restSeconds,
     plate_rounding: ex.plateRounding ?? null,
+    bar_weight: ex.barWeight ?? null,
     linear_increment_steps: ex.linearIncrementSteps ?? null,
     wave_base_load: ex.waveBaseLoad ?? null,
     wave_current_week: ex.waveCurrentWeek ?? null,
