@@ -79,6 +79,7 @@
     {#each draft.exercises as de (de.exerciseId)}
       {@const ex = exercisesStore.getById(de.exerciseId)}
       {@const entry = entryFromDraft(de)}
+      {@const bar = entry.prescribed.barWeight ?? 0}
       {@const status = entryStatus(entry)}
       {@const failed = weekWasFailed(entry)}
       <div class="card">
@@ -91,8 +92,8 @@
           {/if}
         </div>
         <div class="card-sub">
-          {entry.prescribed.sets}×{entry.prescribed.reps} @ {fmtKg(entry.prescribed.load)}
-          {settingsStore.data.weightUnit}
+          {entry.prescribed.sets}×{entry.prescribed.reps} @ {fmtKg(entry.prescribed.load + bar)}
+          {settingsStore.data.weightUnit}{#if bar > 0} · {fmtKg(entry.prescribed.load)} dischi{/if}
         </div>
         {#if failed && ex?.scheme === 'wave' && !entry.prescribed.isDeload && !de.skipped}
           <div style="margin-top: 12px;">
