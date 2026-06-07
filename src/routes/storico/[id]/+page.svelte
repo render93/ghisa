@@ -4,7 +4,7 @@
   import { workoutsStore } from '$lib/stores/workouts.svelte';
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
-  import { fmtDate, fmtKg } from '$lib/ui/utils';
+  import { fmtDate, fmtKg, fmtDuration } from '$lib/ui/utils';
 
   const id = $derived(page.params.id);
   const workout = $derived(id ? workoutsStore.getById(id) : undefined);
@@ -16,7 +16,7 @@
     <p>Seduta non trovata.</p>
   {:else}
     <h2 class="view-title">{fmtDate(workout.performedAt)}</h2>
-    <p class="view-sub">{workout.skipped ? 'seduta saltata' : `${workout.entries.length} esercizi`}</p>
+    <p class="view-sub">{workout.skipped ? 'seduta saltata' : `${workout.entries.length} esercizi${workout.durationSec != null ? ` · ${fmtDuration(workout.durationSec)}` : ''}`}</p>
 
     {#if workout.skipped}
       <div class="card">
