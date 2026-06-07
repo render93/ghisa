@@ -19,6 +19,7 @@ export type Workout = {
   schedaId: string | null;
   dayId: string | null;
   performedAt: string;
+  durationSec: number | null;
   skipped: boolean;
   note: string | null;
   entries: WorkoutEntryRecord[];
@@ -58,6 +59,7 @@ function createWorkoutsStore() {
       schedaId: w.scheda_id as string | null,
       dayId: w.day_id as string | null,
       performedAt: w.performed_at as string,
+      durationSec: (w.duration_sec as number | null) ?? null,
       skipped: w.skipped as boolean,
       note: w.note as string | null,
       entries: entriesByWorkout.get(w.id as string) || []
@@ -69,6 +71,7 @@ function createWorkoutsStore() {
     schedaId: string | null,
     dayId: string | null,
     performedAt: string,
+    durationSec: number,
     entries: Omit<WorkoutEntryRecord, 'id' | 'workoutId'>[]
   ): Promise<Workout> {
     const { data: { user } } = await supabase.auth.getUser();
@@ -80,7 +83,8 @@ function createWorkoutsStore() {
         user_id: user.id,
         scheda_id: schedaId,
         day_id: dayId,
-        performed_at: performedAt
+        performed_at: performedAt,
+        duration_sec: durationSec
       })
       .select()
       .single();
@@ -111,6 +115,7 @@ function createWorkoutsStore() {
       schedaId,
       dayId,
       performedAt,
+      durationSec,
       skipped: (workout.skipped as boolean) ?? false,
       note: (workout.note as string | null) ?? null,
       entries: (insertedEntries || []).map((e) => ({
@@ -158,6 +163,7 @@ function createWorkoutsStore() {
       schedaId,
       dayId,
       performedAt,
+      durationSec: null,
       skipped: true,
       note,
       entries: []
