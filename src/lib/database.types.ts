@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       exercises: {
         Row: {
+          bar_weight: number | null
           created_at: string
           cycle_failures: number
           id: string
@@ -36,6 +37,7 @@ export type Database = {
           wave_current_week: number | null
         }
         Insert: {
+          bar_weight?: number | null
           created_at?: string
           cycle_failures?: number
           id?: string
@@ -56,6 +58,7 @@ export type Database = {
           wave_current_week?: number | null
         }
         Update: {
+          bar_weight?: number | null
           created_at?: string
           cycle_failures?: number
           id?: string
