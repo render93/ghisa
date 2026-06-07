@@ -95,6 +95,7 @@ The Supabase **Site URL** and **Redirect URLs** must include the production GitH
 ## Conventions
 
 - UI strings are Italian — concise, mostly lowercase, sentence-style. Match the existing tone when adding copy.
+- **Pull Request title and body must be written in English** (the squash/merge commit derived from the PR follows suit). This is the one deliverable that is English: in-app UI copy and individual git commit messages stay Italian, as the existing history shows.
 - Bottom tabbar exposes four sections, mapped to routes: `Allenamento` → `/`, `Esercizi` → `/esercizi/`, `Storico` → `/storico/`, `Impostazioni` → `/impostazioni/`.
 - `alert()` / `confirm()` calls are intentional placeholders for future toast/modal components — don't replace them piecemeal; do all of them in one pass when the toast component lands.
 - When a store needs the current user id, it calls `supabase.auth.getUser()` directly rather than reading from `authStore`. Keep this pattern — it ensures every write is double-checked against the live session, not stale store state.
