@@ -480,9 +480,11 @@ git commit -m "feat(storico): mostra durata seduta in dettaglio e lista"
 
 ---
 
-> ## ⏸ FINE MILESTONE 1 — STOP
-> Aggiorna lo stato di M1 in questo plan e fermati per l'ok prima di iniziare la M2.
-> **Verifica runtime suggerita** (richiede la SQL applicata in Supabase): apri l'app, completa una seduta, controlla che durata e storico siano corretti.
+> ## ✅ FINE MILESTONE 1 — COMPLETATA (2026-06-07)
+> Tutti i 5 task implementati via subagent-driven development (implementer + review spec + review qualità per task, più review finale olistica). Commit: `c23b70c` → `e09f5c9`. `npm run check` 0 errori, `npm test` 34/34 verdi.
+> **⚠️ Gate runtime:** la migration `supabase/migrations/20260607000000_add_duration_sec_to_workouts.sql` va applicata a mano nell'SQL Editor di Supabase prima che il salvataggio della durata funzioni a runtime (il codice compila e gira anche senza, ma `duration_sec` resterebbe assente sul DB).
+> **Verifica runtime suggerita** (dopo aver applicato la SQL): apri l'app, completa una seduta, controlla che durata e storico siano corretti.
+> **STOP:** fermarsi per l'ok prima di iniziare la M2.
 
 ---
 
@@ -1182,5 +1184,5 @@ git commit -m "feat(storico): totale dischi+bar nel dettaglio seduta"
 - `src/routes/storico/[id]/+page.svelte`
 
 ## Stato milestone
-- [ ] Milestone 1 — Durata totale
+- [x] Milestone 1 — Durata totale ✅ completata 2026-06-07 (commit `c23b70c` → `e09f5c9`); migration SQL da applicare a mano in Supabase
 - [ ] Milestone 2 — Peso bilanciere
