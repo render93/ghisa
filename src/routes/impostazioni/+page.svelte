@@ -17,7 +17,9 @@
     deloadSetsMult: 'Moltiplicatore serie durante un deload (es. 0.5 = metà serie).',
     deloadRepsMult: 'Moltiplicatore reps durante un deload (es. 0.8 = -20%).',
     linearIncrementSteps: 'Di quanti passi di arrotondamento sale il carico dopo una sessione completata pienamente (1 = un passo). Lo "step" è l\'arrotondamento dischi, globale o per-esercizio.',
-    linearResetPct: 'Quanto ridurre il carico dopo due fallimenti consecutivi.'
+    linearResetPct: 'Quanto ridurre il carico dopo due fallimenti consecutivi.',
+    linearLoadShiftPct: 'Percentuale di serie con peso modificato oltre cui il carico lineare viene ricalibrato al peso usato (ribasso o rialzo).',
+    linearFailThreshold: 'Numero di sessioni lineari fallite consecutive prima che scatti il deload.'
   };
 
   let editing = $state({ ...settingsStore.data });
@@ -207,6 +209,24 @@
       </div>
       <input id="f-linearResetPct" type="number" bind:value={editing.linearResetPct} step="0.5" min="0" />
       {@render helpText('linearResetPct')}
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="f-linearLoadShiftPct">Soglia ricalibro peso (%)</label>
+        {@render helpIcon('linearLoadShiftPct')}
+      </div>
+      <input id="f-linearLoadShiftPct" type="number" bind:value={editing.linearLoadShiftPct} step="5" min="0" max="100" />
+      {@render helpText('linearLoadShiftPct')}
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="f-linearFailThreshold">Fallimenti prima del deload</label>
+        {@render helpIcon('linearFailThreshold')}
+      </div>
+      <input id="f-linearFailThreshold" type="number" bind:value={editing.linearFailThreshold} step="1" min="1" />
+      {@render helpText('linearFailThreshold')}
     </div>
   </div>
 
