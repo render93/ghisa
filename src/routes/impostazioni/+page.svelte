@@ -17,7 +17,7 @@
     deloadSetsMult: 'Moltiplicatore serie durante un deload (es. 0.5 = metà serie).',
     deloadRepsMult: 'Moltiplicatore reps durante un deload (es. 0.8 = -20%).',
     linearIncrementSteps: 'Di quanti passi di arrotondamento sale il carico dopo una sessione completata pienamente (1 = un passo). Lo "step" è l\'arrotondamento dischi, globale o per-esercizio.',
-    linearResetPct: 'Quanto ridurre il carico dopo due fallimenti consecutivi.',
+    linearResetPct: 'Quanto ridurre il carico quando scatta il deload lineare.',
     linearLoadShiftPct: 'Percentuale di serie con peso modificato oltre cui il carico lineare viene ricalibrato al peso usato (ribasso o rialzo).',
     linearFailThreshold: 'Numero di sessioni lineari fallite consecutive prima che scatti il deload.'
   };
