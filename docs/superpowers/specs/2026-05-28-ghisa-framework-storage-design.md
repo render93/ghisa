@@ -359,3 +359,9 @@ Da NON implementare in questa fase ma da ricordare:
 ## Domande aperte
 
 Nessuna al momento. Tutto risolto in brainstorming.
+
+## Stato implementazione
+
+**2026-07-02 — Completato integralmente e in produzione.**
+
+Il design descritto in questo documento è stato implementato per intero: SPA SvelteKit statica su GitHub Pages, persistenza + auth Supabase con RLS `auth.uid() = user_id` su tutte le tabelle, store a rune, motore di progressione wave + lineare testato. Riferimento autorevole per lo stato attuale: la storia di `main` e `CLAUDE.md`. Questa sezione chiude il Task 48 (mai eseguito) del plan associato.

@@ -1,5 +1,8 @@
 # Ghisa — Refactor a SvelteKit + Supabase: Piano di Implementazione
 
+> **✅ STATO (2026-07-02): COMPLETATO INTEGRALMENTE e in produzione.**
+> L'app è live su GitHub Pages con Supabase; l'intera architettura descritta qui è stata costruita — vedi la storia di `main`. Le 174 checkbox `- [ ]` qui sotto **non** riflettono lo stato reale (non sono mai state spuntate durante l'esecuzione): sono da considerarsi tutte completate. Non ripartire da questo plan per re-implementare; usarlo solo come contesto storico.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Riscrivere l'app `index.html` come SPA SvelteKit (TypeScript + Vite + adapter-static) con persistenza su Supabase, mantenendo la funzionalità attuale 1:1 e abilitando sync trasparente tra dispositivi per un singolo utente, con deploy automatico su GitHub Pages.
