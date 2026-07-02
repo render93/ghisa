@@ -1,5 +1,7 @@
 import { supabase } from '$lib/supabase';
-import type { Entry, ProgressionResult } from '$lib/domain/types';
+import { domainToDb } from '$lib/stores/exercises.svelte';
+import type { Entry, Exercise, ProgressionResult } from '$lib/domain/types';
+import type { Json } from '$lib/database.types';
 
 export type WorkoutEntryRecord = {
   id: string;
@@ -25,6 +27,21 @@ export type Workout = {
   entries: WorkoutEntryRecord[];
 };
 
+function dbRowToEntry(e: Record<string, unknown>): WorkoutEntryRecord {
+  return {
+    id: e.id as string,
+    workoutId: e.workout_id as string,
+    exerciseId: e.exercise_id as string,
+    position: e.position as number,
+    prescribed: e.prescribed as Entry['prescribed'],
+    actualSets: e.actual_sets as Entry['actualSets'],
+    userAction: e.user_action as 'repeat' | null,
+    resultInfo: e.result_info as ProgressionResult | null,
+    isDeloadSession: e.is_deload_session as boolean,
+    skipped: e.skipped as boolean
+  };
+}
+
 function createWorkoutsStore() {
   const state = $state<{ items: Workout[]; loaded: boolean }>({ items: [], loaded: false });
 
@@ -38,18 +55,7 @@ function createWorkoutsStore() {
 
     const entriesByWorkout = new Map<string, WorkoutEntryRecord[]>();
     for (const e of entries || []) {
-      const rec: WorkoutEntryRecord = {
-        id: e.id as string,
-        workoutId: e.workout_id as string,
-        exerciseId: e.exercise_id as string,
-        position: e.position as number,
-        prescribed: e.prescribed as Entry['prescribed'],
-        actualSets: e.actual_sets as Entry['actualSets'],
-        userAction: e.user_action as 'repeat' | null,
-        resultInfo: e.result_info as ProgressionResult | null,
-        isDeloadSession: e.is_deload_session as boolean,
-        skipped: e.skipped as boolean
-      };
+      const rec = dbRowToEntry(e as Record<string, unknown>);
       if (!entriesByWorkout.has(rec.workoutId)) entriesByWorkout.set(rec.workoutId, []);
       entriesByWorkout.get(rec.workoutId)!.push(rec);
     }
@@ -72,28 +78,13 @@ function createWorkoutsStore() {
     dayId: string | null,
     performedAt: string,
     durationSec: number,
-    entries: Omit<WorkoutEntryRecord, 'id' | 'workoutId'>[]
+    entries: Omit<WorkoutEntryRecord, 'id' | 'workoutId'>[],
+    exerciseUpdates: Exercise[]
   ): Promise<Workout> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { data: workout, error: e1 } = await supabase
-      .from('workouts')
-      .insert({
-        user_id: user.id,
-        scheda_id: schedaId,
-        day_id: dayId,
-        performed_at: performedAt,
-        duration_sec: durationSec
-      })
-      .select()
-      .single();
-    if (e1) throw e1;
-
-    const workoutId = workout.id as string;
-    const entryRows = entries.map((e, i) => ({
-      workout_id: workoutId,
-      user_id: user.id,
+    const p_entries = entries.map((e, i) => ({
       exercise_id: e.exerciseId,
       position: i,
       prescribed: e.prescribed,
@@ -103,33 +94,32 @@ function createWorkoutsStore() {
       is_deload_session: e.isDeloadSession,
       skipped: e.skipped
     }));
+    const p_exercise_updates = exerciseUpdates.map((ex) => domainToDb(ex, user.id));
 
-    const { data: insertedEntries, error: e2 } = await supabase
-      .from('workout_entries')
-      .insert(entryRows)
-      .select();
-    if (e2) throw e2;
+    const { data, error } = await supabase.rpc('commit_workout', {
+      // schedaId/dayId are legitimately nullable (uuid columns accept NULL);
+      // the generated RPC Args type can't express param nullability, so
+      // narrow here — this is a type-only cast, Postgres accepts NULL as-is.
+      p_scheda_id: schedaId as string,
+      p_day_id: dayId as string,
+      p_performed_at: performedAt,
+      p_duration_sec: durationSec,
+      p_entries: p_entries as unknown as Json,
+      p_exercise_updates: p_exercise_updates as unknown as Json
+    });
+    if (error) throw error;
 
+    const payload = data as { workout: Record<string, unknown>; entries: Record<string, unknown>[] };
+    const w = payload.workout;
     const newWorkout: Workout = {
-      id: workoutId,
+      id: w.id as string,
       schedaId,
       dayId,
       performedAt,
       durationSec,
-      skipped: (workout.skipped as boolean) ?? false,
-      note: (workout.note as string | null) ?? null,
-      entries: (insertedEntries || []).map((e) => ({
-        id: e.id as string,
-        workoutId,
-        exerciseId: e.exercise_id as string,
-        position: e.position as number,
-        prescribed: e.prescribed as Entry['prescribed'],
-        actualSets: e.actual_sets as Entry['actualSets'],
-        userAction: e.user_action as 'repeat' | null,
-        resultInfo: e.result_info as ProgressionResult | null,
-        isDeloadSession: e.is_deload_session as boolean,
-        skipped: e.skipped as boolean
-      }))
+      skipped: (w.skipped as boolean) ?? false,
+      note: (w.note as string | null) ?? null,
+      entries: (payload.entries || []).map(dbRowToEntry)
     };
     state.items = [newWorkout, ...state.items];
     return newWorkout;

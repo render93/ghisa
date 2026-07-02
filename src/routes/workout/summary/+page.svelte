@@ -6,9 +6,10 @@
   import { workoutsStore } from '$lib/stores/workouts.svelte';
   import { applyEntryResult, entryStatus, weekWasFailed } from '$lib/domain/progression';
   import { fmtKg } from '$lib/ui/utils';
-  import type { Entry, ProgressionResult } from '$lib/domain/types';
+  import type { Entry, Exercise, ProgressionResult } from '$lib/domain/types';
 
   const draft = $derived(workoutDraftStore.draft);
+  let saving = $state(false);
 
   function entryFromDraft(de: NonNullable<typeof draft>['exercises'][number]): Entry {
     return {
@@ -19,45 +20,50 @@
   }
 
   async function commit() {
-    if (!draft) return;
-    const entries: Parameters<typeof workoutsStore.commit>[4] = [];
-    for (const de of draft.exercises) {
-      const ex = exercisesStore.getById(de.exerciseId);
-      const entry = entryFromDraft(de);
-      const anyLogged = entry.actualSets.some((s) => s.status !== null);
+    if (!draft || saving) return;
+    saving = true;
+    try {
+      const entries: Parameters<typeof workoutsStore.commit>[4] = [];
+      const exerciseUpdates: Exercise[] = [];
+      for (const de of draft.exercises) {
+        const ex = exercisesStore.getById(de.exerciseId);
+        const entry = entryFromDraft(de);
+        const anyLogged = entry.actualSets.some((s) => s.status !== null);
 
-      let resultInfo: ProgressionResult | null = null;
-      let userAction: 'repeat' | null = null;
-      if (!de.skipped && anyLogged && ex) {
-        userAction = workoutDraftStore.summaryChoices[de.exerciseId] ?? null;
-        const r = applyEntryResult(ex, entry, userAction, settingsStore.data);
-        resultInfo = r.info;
-        await exercisesStore.update(r.updatedExercise);
+        let resultInfo: ProgressionResult | null = null;
+        let userAction: 'repeat' | null = null;
+        if (!de.skipped && anyLogged && ex) {
+          userAction = workoutDraftStore.summaryChoices[de.exerciseId] ?? null;
+          const r = applyEntryResult(ex, entry, userAction, settingsStore.data);
+          resultInfo = r.info;
+          exerciseUpdates.push(r.updatedExercise);
+        }
+
+        entries.push({
+          exerciseId: de.exerciseId,
+          position: 0,
+          prescribed: entry.prescribed,
+          actualSets: entry.actualSets,
+          userAction,
+          resultInfo,
+          isDeloadSession: !!entry.isDeloadSession,
+          skipped: de.skipped
+        });
       }
 
-      entries.push({
-        exerciseId: de.exerciseId,
-        position: 0,
-        prescribed: entry.prescribed,
-        actualSets: entry.actualSets,
-        userAction,
-        resultInfo,
-        isDeloadSession: !!entry.isDeloadSession,
-        skipped: de.skipped
-      });
-    }
+      const durationSec = Math.max(
+        0,
+        Math.round((Date.now() - new Date(draft.date).getTime()) / 1000)
+      );
 
-    const durationSec = Math.max(
-      0,
-      Math.round((Date.now() - new Date(draft.date).getTime()) / 1000)
-    );
-
-    try {
-      await workoutsStore.commit(draft.schedaId, draft.dayId, draft.date, durationSec, entries);
+      await workoutsStore.commit(draft.schedaId, draft.dayId, draft.date, durationSec, entries, exerciseUpdates);
+      exercisesStore.applyLocal(exerciseUpdates);
       workoutDraftStore.cancel();
       nav('/storico/');
     } catch (err) {
       alert('Errore salvataggio: ' + (err instanceof Error ? err.message : ''));
+    } finally {
+      saving = false;
     }
   }
 
@@ -123,7 +129,9 @@
       </div>
     {/each}
 
-    <button class="btn primary" onclick={commit} style="margin-top: 24px;">Conferma e salva</button>
+    <button class="btn primary" onclick={commit} disabled={saving} style="margin-top: 24px;">
+      {saving ? 'Salvataggio…' : 'Conferma e salva'}
+    </button>
   </div>
 {/if}
 
@@ -145,6 +153,9 @@
   .btn.primary {
     background: var(--ink);
     color: white;
+  }
+  .btn:disabled {
+    opacity: 0.6;
   }
   .badge {
     font-family: var(--mono);

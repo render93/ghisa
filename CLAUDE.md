@@ -60,12 +60,11 @@ If you change one, run the Vitest suite (`progression.test.ts`) and update the o
 A workout in progress is **not** persisted. It lives in `workout-draft.svelte.ts` (`workoutDraftStore.draft`), populated when the user starts a session in `/workout/new/`. Each set logged updates the draft in memory only.
 
 The draft becomes a real DB record only when the user confirms in `/workout/summary/`:
-1. For each entry with any logged set, `applyEntryResult(...)` computes the updated exercise + result info.
-2. `exercisesStore.update(updatedExercise)` writes the new progression state.
-3. `workoutsStore.commit(...)` inserts one `workouts` row + N `workout_entries` rows in a single Supabase call.
-4. The draft is cleared and the user is sent to `/storico/`.
+1. For each entry with any logged set, `applyEntryResult(...)` computes the updated exercise + result info; the component collects the entries and the advanced exercises.
+2. A single transactional RPC — `supabase.rpc('commit_workout', ...)` via `workoutsStore.commit(...)` — inserts one `workouts` row + N `workout_entries` rows **and** advances the exercises' progression, all in one Postgres transaction (all-or-nothing).
+3. On success the in-memory exercise state is synced via `exercisesStore.applyLocal(...)` (no extra DB round-trip), the draft is cleared, and the user is sent to `/storico/`. On failure nothing is written, the draft is kept, and a retry is clean.
 
-This is the **only** place exercise progression state advances. If you add a new mutation path, mirror the same sequence (apply → update exercise → commit workout) or progression state will desync from history.
+A `saving` flag disables the confirm button to prevent double-submit. This is the **only** place exercise progression state advances. If you add a new mutation path, route it through the same `commit_workout` RPC or progression state will desync from history.
 
 ### Rest timer — singleton via event bus
 
