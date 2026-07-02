@@ -43,7 +43,7 @@ function dbToDomain(row: DbExercise): Exercise {
   };
 }
 
-function domainToDb(ex: Exercise, userId: string): Omit<DbExercise, 'id'> & { id?: string } {
+export function domainToDb(ex: Exercise, userId: string): Omit<DbExercise, 'id'> & { id?: string } {
   return {
     ...(ex.id ? { id: ex.id } : {}),
     user_id: userId,
@@ -116,6 +116,17 @@ function createExercisesStore() {
     }
   }
 
+  // Aggiorna SOLO lo stato in memoria, senza round-trip DB. Usato dopo il commit
+  // atomico della seduta (RPC commit_workout), che ha già persistito la
+  // progressione: qui si allinea la copia in memoria. Eccezione consapevole al
+  // pattern optimistic+persist+rollback di update()/remove().
+  function applyLocal(exs: Exercise[]) {
+    for (const ex of exs) {
+      const idx = state.items.findIndex((e) => e.id === ex.id);
+      if (idx >= 0) state.items[idx] = ex;
+    }
+  }
+
   function getById(id: string): Exercise | undefined {
     return state.items.find((e) => e.id === id);
   }
@@ -127,6 +138,7 @@ function createExercisesStore() {
     create,
     update,
     remove,
+    applyLocal,
     getById
   };
 }
