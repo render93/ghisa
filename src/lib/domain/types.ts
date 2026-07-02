@@ -6,6 +6,8 @@ export type Settings = {
   waveCycleIncrementPct: number;
   linearIncrementSteps: number;
   linearResetPct: number;
+  linearLoadShiftPct: number;
+  linearFailThreshold: number;
   plateRoundingWave: number;
   plateRoundingLinear: number;
   notificationsEnabled: boolean;
@@ -70,6 +72,8 @@ export type UserAction = 'repeat' | null;
 export type ProgressionResult =
   | { kind: 'noop' }
   | { kind: 'linear-advance'; newLoad: number }
+  | { kind: 'linear-downshift'; newLoad: number }
+  | { kind: 'linear-upshift'; newLoad: number }
   | { kind: 'linear-repeat' }
   | { kind: 'linear-deload'; newLoad: number }
   | { kind: 'wave-advance-week'; failed: boolean; week: number; cycleFailures: number }
@@ -104,6 +108,8 @@ export const DEFAULT_SETTINGS: Settings = {
   waveCycleIncrementPct: 2.5,
   linearIncrementSteps: 1,
   linearResetPct: 10,
+  linearLoadShiftPct: 25,
+  linearFailThreshold: 2,
   plateRoundingWave: 2.5,
   plateRoundingLinear: 2,
   notificationsEnabled: false,

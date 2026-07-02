@@ -414,3 +414,10 @@ describe('applyEntryResult — arrotondamento override', () => {
     expect(result.updatedExercise.waveBaseLoad).toBe(96);
   });
 });
+
+describe('DEFAULT_SETTINGS — nuove soglie lineari', () => {
+  it('espone linearLoadShiftPct=25 e linearFailThreshold=2', () => {
+    expect(DEFAULT_SETTINGS.linearLoadShiftPct).toBe(25);
+    expect(DEFAULT_SETTINGS.linearFailThreshold).toBe(2);
+  });
+});
