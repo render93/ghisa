@@ -24,6 +24,44 @@ export function effectiveIncrementSteps(ex: Exercise, settings: Settings): numbe
   return ex.linearIncrementSteps ?? settings.linearIncrementSteps;
 }
 
+export type LinearOutcome =
+  | { kind: 'advance'; newLoad: number }
+  | { kind: 'downshift'; newLoad: number }
+  | { kind: 'upshift'; newLoad: number }
+  | { kind: 'repeat'; newLoad: number }
+  | { kind: 'deload'; newLoad: number };
+
+export function resolveLinearOutcome(ex: Exercise, entry: Entry, settings: Settings): LinearOutcome {
+  const P = entry.prescribed.load;
+  const R = entry.prescribed.reps;
+  const sets = entry.actualSets;
+  const N = sets.length;
+  const step = effectiveRounding(ex, settings);
+  const currentLoad = ex.linearCurrentLoad ?? 0;
+
+  const completed = N > 0 && sets.every((s) => s.status === 'ok' && (s.reps || 0) >= R);
+
+  const loads = sets.map((s) => s.load);
+  const t = settings.linearLoadShiftPct / 100;
+  const loweredOverThreshold = N > 0 && sets.filter((s) => s.load < P).length / N > t;
+  const raisedOverThreshold = N > 0 && sets.filter((s) => s.load > P).length / N > t;
+
+  if (completed) {
+    if (loweredOverThreshold) return { kind: 'downshift', newLoad: roundTo(Math.min(...loads), step) };
+    if (raisedOverThreshold) return { kind: 'upshift', newLoad: roundTo(Math.max(...loads), step) };
+    const steps = effectiveIncrementSteps(ex, settings);
+    return { kind: 'advance', newLoad: roundTo(currentLoad + steps * step, step) };
+  }
+
+  // non completato → fallimento; se ha abbassato oltre soglia, il lavoro scende comunque al minimo usato
+  const baseLoad = loweredOverThreshold ? Math.min(...loads) : currentLoad;
+  const fails = (ex.linearConsecutiveFailures ?? 0) + 1;
+  if (fails >= settings.linearFailThreshold) {
+    return { kind: 'deload', newLoad: roundTo(baseLoad * (1 - settings.linearResetPct / 100), step) };
+  }
+  return { kind: 'repeat', newLoad: roundTo(baseLoad, step) };
+}
+
 export function nextPrescription(ex: Exercise, settings: Settings): Prescription {
   if (ex.scheme === 'wave') {
     const week = ex.waveCurrentWeek ?? 1;
@@ -89,34 +127,21 @@ export function applyEntryResult(
   if (!anyAttempt) return { updatedExercise: updated, info: { kind: 'noop' } };
 
   if (ex.scheme === 'linear') {
-    const target = entry.prescribed.reps;
-    const allCompleted = entry.actualSets.every(
-      (s) => s.status === 'ok' && (s.reps || 0) >= target
-    );
-    if (allCompleted) {
-      const step = effectiveRounding(ex, settings);
-      const steps = effectiveIncrementSteps(ex, settings);
-      updated.linearCurrentLoad = roundTo((ex.linearCurrentLoad ?? 0) + steps * step, step);
-      updated.linearConsecutiveFailures = 0;
-      return {
-        updatedExercise: updated,
-        info: { kind: 'linear-advance', newLoad: updated.linearCurrentLoad! }
-      };
-    }
-    const fails = (ex.linearConsecutiveFailures ?? 0) + 1;
-    if (fails >= 2) {
-      updated.linearCurrentLoad = roundTo(
-        (ex.linearCurrentLoad ?? 0) * (1 - settings.linearResetPct / 100),
-        effectiveRounding(ex, settings)
-      );
-      updated.linearConsecutiveFailures = 0;
-      return {
-        updatedExercise: updated,
-        info: { kind: 'linear-deload', newLoad: updated.linearCurrentLoad! }
-      };
-    }
-    updated.linearConsecutiveFailures = fails;
-    return { updatedExercise: updated, info: { kind: 'linear-repeat' } };
+    const outcome = resolveLinearOutcome(ex, entry, settings);
+    updated.linearCurrentLoad = outcome.newLoad;
+    updated.linearConsecutiveFailures =
+      outcome.kind === 'repeat' ? (ex.linearConsecutiveFailures ?? 0) + 1 : 0;
+    const info: ProgressionResult =
+      outcome.kind === 'advance'
+        ? { kind: 'linear-advance', newLoad: outcome.newLoad }
+        : outcome.kind === 'downshift'
+          ? { kind: 'linear-downshift', newLoad: outcome.newLoad }
+          : outcome.kind === 'upshift'
+            ? { kind: 'linear-upshift', newLoad: outcome.newLoad }
+            : outcome.kind === 'deload'
+              ? { kind: 'linear-deload', newLoad: outcome.newLoad }
+              : { kind: 'linear-repeat' };
+    return { updatedExercise: updated, info };
   }
 
   // wave
