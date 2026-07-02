@@ -22,13 +22,15 @@
 
 ## Stato esecuzione
 
-> Aggiornato: 2026-07-02 — plan creato, non ancora avviato.
+> Aggiornato: 2026-07-02 — **tutti i 5 task completati** su `feature/linear-load-shift`; `npm test` 51/51, `npm run check` 0 errori. Review finale del branch: nessun Critical/Important. R7 e A3-04 chiusi.
 
-- [ ] Task 1 — Settings + varianti ProgressionResult
-- [ ] Task 2 — `resolveLinearOutcome` (funzione pura)
-- [ ] Task 3 — Integrazione in `applyEntryResult`
-- [ ] Task 4 — UI seduta (riga condizionale + gate logging)
-- [ ] Task 5 — Form Impostazioni (2 controlli)
+- [x] Task 1 — Settings + varianti ProgressionResult (commit `d57bfdf`)
+- [x] Task 2 — `resolveLinearOutcome` (funzione pura) (commit `ff9a7c3`)
+- [x] Task 3 — Integrazione in `applyEntryResult` (commit `f499a91`)
+- [x] Task 4 — UI seduta (riga condizionale + gate logging) (commit `8e60d04`)
+- [x] Task 5 — Form Impostazioni (2 controlli) (commit `6467e48`)
+
+**Minor noti (dalla review finale):** M1 — un ribasso/rialzo verso un peso fuori-griglia può arrotondare fino al carico prescritto (etichetta `linear-downshift`/`-upshift` senza calo/salita effettivo): cosmetico, coerente col vincolo "carico multiplo dello step", non renderizzato in UI, non una regressione. M2 (copy dell'help `linearResetPct` legata al "due" fisso) — **risolto**.
 
 ---
 
