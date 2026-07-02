@@ -24,6 +24,44 @@ export function effectiveIncrementSteps(ex: Exercise, settings: Settings): numbe
   return ex.linearIncrementSteps ?? settings.linearIncrementSteps;
 }
 
+export type LinearOutcome =
+  | { kind: 'advance'; newLoad: number }
+  | { kind: 'downshift'; newLoad: number }
+  | { kind: 'upshift'; newLoad: number }
+  | { kind: 'repeat'; newLoad: number }
+  | { kind: 'deload'; newLoad: number };
+
+export function resolveLinearOutcome(ex: Exercise, entry: Entry, settings: Settings): LinearOutcome {
+  const P = entry.prescribed.load;
+  const R = entry.prescribed.reps;
+  const sets = entry.actualSets;
+  const N = sets.length;
+  const step = effectiveRounding(ex, settings);
+  const currentLoad = ex.linearCurrentLoad ?? 0;
+
+  const completed = N > 0 && sets.every((s) => s.status === 'ok' && (s.reps || 0) >= R);
+
+  const loads = sets.map((s) => s.load);
+  const t = settings.linearLoadShiftPct / 100;
+  const loweredOverThreshold = N > 0 && sets.filter((s) => s.load < P).length / N > t;
+  const raisedOverThreshold = N > 0 && sets.filter((s) => s.load > P).length / N > t;
+
+  if (completed) {
+    if (loweredOverThreshold) return { kind: 'downshift', newLoad: roundTo(Math.min(...loads), step) };
+    if (raisedOverThreshold) return { kind: 'upshift', newLoad: roundTo(Math.max(...loads), step) };
+    const steps = effectiveIncrementSteps(ex, settings);
+    return { kind: 'advance', newLoad: roundTo(currentLoad + steps * step, step) };
+  }
+
+  // non completato → fallimento; se ha abbassato oltre soglia, il lavoro scende comunque al minimo usato
+  const baseLoad = loweredOverThreshold ? Math.min(...loads) : currentLoad;
+  const fails = (ex.linearConsecutiveFailures ?? 0) + 1;
+  if (fails >= settings.linearFailThreshold) {
+    return { kind: 'deload', newLoad: roundTo(baseLoad * (1 - settings.linearResetPct / 100), step) };
+  }
+  return { kind: 'repeat', newLoad: roundTo(baseLoad, step) };
+}
+
 export function nextPrescription(ex: Exercise, settings: Settings): Prescription {
   if (ex.scheme === 'wave') {
     const week = ex.waveCurrentWeek ?? 1;

@@ -421,3 +421,86 @@ describe('DEFAULT_SETTINGS — nuove soglie lineari', () => {
     expect(DEFAULT_SETTINGS.linearFailThreshold).toBe(2);
   });
 });
+
+import { resolveLinearOutcome, type LinearOutcome } from './progression';
+
+describe('resolveLinearOutcome', () => {
+  // esercizio lineare 4×12 @ 10, step (plateRoundingLinear) = 2
+  const ex = (o = {}) => baseLinear({ linearCurrentLoad: 10, linearTargetReps: 12, linearTargetSets: 4, ...o });
+  const e = (sets: { status: 'ok' | 'fail'; reps: number; load: number }[]) =>
+    entry({ prescribed: { sets: 4, reps: 12, load: 10 }, actualSets: sets });
+
+  it('tutte al prescritto e completate → advance +step', () => {
+    const r = resolveLinearOutcome(ex(), e([
+      { status: 'ok', reps: 12, load: 10 }, { status: 'ok', reps: 12, load: 10 },
+      { status: 'ok', reps: 12, load: 10 }, { status: 'ok', reps: 12, load: 10 }
+    ]), DEFAULT_SETTINGS);
+    expect(r).toEqual({ kind: 'advance', newLoad: 12 });
+  });
+
+  it('>25% abbassate e completate → downshift al più basso', () => {
+    const r = resolveLinearOutcome(ex(), e([
+      { status: 'ok', reps: 12, load: 10 }, { status: 'ok', reps: 12, load: 10 },
+      { status: 'ok', reps: 12, load: 8 }, { status: 'ok', reps: 12, load: 8 }
+    ]), DEFAULT_SETTINGS);
+    expect(r).toEqual({ kind: 'downshift', newLoad: 8 });
+  });
+
+  it('>25% alzate e completate → upshift al più alto', () => {
+    const r = resolveLinearOutcome(ex(), e([
+      { status: 'ok', reps: 12, load: 10 }, { status: 'ok', reps: 12, load: 10 },
+      { status: 'ok', reps: 12, load: 12 }, { status: 'ok', reps: 12, load: 12 }
+    ]), DEFAULT_SETTINGS);
+    expect(r).toEqual({ kind: 'upshift', newLoad: 12 });
+  });
+
+  it('esattamente 25% abbassate (1 su 4) → non scatta, advance', () => {
+    const r = resolveLinearOutcome(ex(), e([
+      { status: 'ok', reps: 12, load: 10 }, { status: 'ok', reps: 12, load: 10 },
+      { status: 'ok', reps: 12, load: 10 }, { status: 'ok', reps: 12, load: 8 }
+    ]), DEFAULT_SETTINGS);
+    expect(r).toEqual({ kind: 'advance', newLoad: 12 });
+  });
+
+  it('mix abbassate+alzate oltre soglia → precede il ribasso', () => {
+    const r = resolveLinearOutcome(ex(), e([
+      { status: 'ok', reps: 12, load: 8 }, { status: 'ok', reps: 12, load: 8 },
+      { status: 'ok', reps: 12, load: 12 }, { status: 'ok', reps: 12, load: 12 }
+    ]), DEFAULT_SETTINGS);
+    expect(r).toEqual({ kind: 'downshift', newLoad: 8 });
+  });
+
+  it('pesi misti abbassati → downshift al minimo', () => {
+    const r = resolveLinearOutcome(ex(), e([
+      { status: 'ok', reps: 12, load: 6 }, { status: 'ok', reps: 12, load: 8 },
+      { status: 'ok', reps: 12, load: 10 }, { status: 'ok', reps: 12, load: 10 }
+    ]), DEFAULT_SETTINGS);
+    expect(r).toEqual({ kind: 'downshift', newLoad: 6 });
+  });
+
+  it('non completato senza abbassamenti → repeat allo stesso carico', () => {
+    const r = resolveLinearOutcome(ex(), e([
+      { status: 'ok', reps: 12, load: 10 }, { status: 'ok', reps: 12, load: 10 },
+      { status: 'ok', reps: 12, load: 10 }, { status: 'ok', reps: 9, load: 10 }
+    ]), DEFAULT_SETTINGS);
+    expect(r).toEqual({ kind: 'repeat', newLoad: 10 });
+  });
+
+  it('abbassi oltre soglia ma non chiudi le reps → repeat al minimo usato', () => {
+    const r = resolveLinearOutcome(ex(), e([
+      { status: 'ok', reps: 9, load: 8 }, { status: 'ok', reps: 9, load: 8 },
+      { status: 'ok', reps: 12, load: 8 }, { status: 'ok', reps: 12, load: 10 }
+    ]), DEFAULT_SETTINGS);
+    expect(r).toEqual({ kind: 'repeat', newLoad: 8 });
+  });
+
+  it('secondo fallimento consecutivo → deload dal carico corrente', () => {
+    const exDl = baseLinear({ linearCurrentLoad: 100, linearTargetReps: 12, linearConsecutiveFailures: 1 });
+    const r = resolveLinearOutcome(exDl, entry({
+      prescribed: { sets: 3, reps: 12, load: 100 },
+      actualSets: [{ status: 'fail', reps: 8, load: 100 }]
+    }), DEFAULT_SETTINGS);
+    // 100 * (1 - 10/100) = 90
+    expect(r).toEqual({ kind: 'deload', newLoad: 90 });
+  });
+});
