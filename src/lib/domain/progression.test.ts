@@ -504,3 +504,39 @@ describe('resolveLinearOutcome', () => {
     expect(r).toEqual({ kind: 'deload', newLoad: 90 });
   });
 });
+
+describe('applyEntryResult — linear ricalibro peso', () => {
+  const exL = (o = {}) => baseLinear({ linearCurrentLoad: 10, linearTargetReps: 12, linearTargetSets: 4, ...o });
+
+  it('completato con >25% abbassate → linear-downshift, carico al minimo, fails 0', () => {
+    const e = entry({ prescribed: { sets: 4, reps: 12, load: 10 }, actualSets: [
+      { status: 'ok', reps: 12, load: 10 }, { status: 'ok', reps: 12, load: 10 },
+      { status: 'ok', reps: 12, load: 8 }, { status: 'ok', reps: 12, load: 8 }
+    ]});
+    const r = applyEntryResult(exL(), e, null, DEFAULT_SETTINGS);
+    expect(r.info.kind).toBe('linear-downshift');
+    expect(r.updatedExercise.linearCurrentLoad).toBe(8);
+    expect(r.updatedExercise.linearConsecutiveFailures).toBe(0);
+  });
+
+  it('completato con >25% alzate → linear-upshift, carico al massimo', () => {
+    const e = entry({ prescribed: { sets: 4, reps: 12, load: 10 }, actualSets: [
+      { status: 'ok', reps: 12, load: 10 }, { status: 'ok', reps: 12, load: 10 },
+      { status: 'ok', reps: 12, load: 12 }, { status: 'ok', reps: 12, load: 12 }
+    ]});
+    const r = applyEntryResult(exL(), e, null, DEFAULT_SETTINGS);
+    expect(r.info.kind).toBe('linear-upshift');
+    expect(r.updatedExercise.linearCurrentLoad).toBe(12);
+  });
+
+  it('abbassi oltre soglia ma fallisci le reps → linear-repeat al minimo, fails +1', () => {
+    const e = entry({ prescribed: { sets: 4, reps: 12, load: 10 }, actualSets: [
+      { status: 'ok', reps: 9, load: 8 }, { status: 'ok', reps: 9, load: 8 },
+      { status: 'ok', reps: 12, load: 8 }, { status: 'ok', reps: 12, load: 10 }
+    ]});
+    const r = applyEntryResult(exL(), e, null, DEFAULT_SETTINGS);
+    expect(r.info.kind).toBe('linear-repeat');
+    expect(r.updatedExercise.linearCurrentLoad).toBe(8);
+    expect(r.updatedExercise.linearConsecutiveFailures).toBe(1);
+  });
+});

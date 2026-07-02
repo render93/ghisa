@@ -127,34 +127,21 @@ export function applyEntryResult(
   if (!anyAttempt) return { updatedExercise: updated, info: { kind: 'noop' } };
 
   if (ex.scheme === 'linear') {
-    const target = entry.prescribed.reps;
-    const allCompleted = entry.actualSets.every(
-      (s) => s.status === 'ok' && (s.reps || 0) >= target
-    );
-    if (allCompleted) {
-      const step = effectiveRounding(ex, settings);
-      const steps = effectiveIncrementSteps(ex, settings);
-      updated.linearCurrentLoad = roundTo((ex.linearCurrentLoad ?? 0) + steps * step, step);
-      updated.linearConsecutiveFailures = 0;
-      return {
-        updatedExercise: updated,
-        info: { kind: 'linear-advance', newLoad: updated.linearCurrentLoad! }
-      };
-    }
-    const fails = (ex.linearConsecutiveFailures ?? 0) + 1;
-    if (fails >= 2) {
-      updated.linearCurrentLoad = roundTo(
-        (ex.linearCurrentLoad ?? 0) * (1 - settings.linearResetPct / 100),
-        effectiveRounding(ex, settings)
-      );
-      updated.linearConsecutiveFailures = 0;
-      return {
-        updatedExercise: updated,
-        info: { kind: 'linear-deload', newLoad: updated.linearCurrentLoad! }
-      };
-    }
-    updated.linearConsecutiveFailures = fails;
-    return { updatedExercise: updated, info: { kind: 'linear-repeat' } };
+    const outcome = resolveLinearOutcome(ex, entry, settings);
+    updated.linearCurrentLoad = outcome.newLoad;
+    updated.linearConsecutiveFailures =
+      outcome.kind === 'repeat' ? (ex.linearConsecutiveFailures ?? 0) + 1 : 0;
+    const info: ProgressionResult =
+      outcome.kind === 'advance'
+        ? { kind: 'linear-advance', newLoad: outcome.newLoad }
+        : outcome.kind === 'downshift'
+          ? { kind: 'linear-downshift', newLoad: outcome.newLoad }
+          : outcome.kind === 'upshift'
+            ? { kind: 'linear-upshift', newLoad: outcome.newLoad }
+            : outcome.kind === 'deload'
+              ? { kind: 'linear-deload', newLoad: outcome.newLoad }
+              : { kind: 'linear-repeat' };
+    return { updatedExercise: updated, info };
   }
 
   // wave
