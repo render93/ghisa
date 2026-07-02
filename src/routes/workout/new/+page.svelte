@@ -36,6 +36,11 @@
     currentEntry ? exercisesStore.getById(currentEntry.exerciseId) : undefined
   );
   const bar = $derived(currentEntry?.prescribed.barWeight ?? 0);
+  const allSetsLogged = $derived(
+    !currentEntry
+      ? false
+      : currentEntry.skipped || currentEntry.sets.every((s) => s.status !== null)
+  );
 
   function logSet(idx: number, status: 'ok' | 'fail') {
     if (!draft) return;
@@ -106,7 +111,7 @@
     {:else}
       {#each currentEntry.sets as set, i (i)}
         {@const closed = set.status !== null}
-        <div class="set-row card" class:closed>
+        <div class="set-row card" class:closed class:no-load={currentExercise.scheme !== 'linear'}>
           <span class="order">{i + 1}</span>
           <label class="field">
             <span class="field-label">REPS</span>
@@ -118,17 +123,19 @@
               oninput={(e) => updateReps(i, +(e.currentTarget as HTMLInputElement).value)}
             />
           </label>
-          <label class="field">
-            <span class="field-label">KG{#if bar > 0} (tot){/if}</span>
-            <input
-              type="number"
-              min="0"
-              step={effectiveRounding(currentExercise, settingsStore.data)}
-              value={set.load + bar}
-              disabled={closed}
-              oninput={(e) => updateLoad(i, Math.max(0, +(e.currentTarget as HTMLInputElement).value - bar))}
-            />
-          </label>
+          {#if currentExercise.scheme === 'linear'}
+            <label class="field">
+              <span class="field-label">KG{#if bar > 0} (tot){/if}</span>
+              <input
+                type="number"
+                min="0"
+                step={effectiveRounding(currentExercise, settingsStore.data)}
+                value={set.load + bar}
+                disabled={closed}
+                oninput={(e) => updateLoad(i, Math.max(0, +(e.currentTarget as HTMLInputElement).value - bar))}
+              />
+            </label>
+          {/if}
           <button
             type="button"
             class="mark-btn pass"
@@ -152,9 +159,9 @@
     <div class="nav-row">
       <button class="btn secondary" onclick={prev} disabled={isFirst}>← Prec</button>
       {#if isLast}
-        <button class="btn primary" onclick={finish}>Concludi seduta →</button>
+        <button class="btn primary" onclick={finish} disabled={!allSetsLogged}>Concludi seduta →</button>
       {:else}
-        <button class="btn primary" onclick={next}>Succ →</button>
+        <button class="btn primary" onclick={next} disabled={!allSetsLogged}>Succ →</button>
       {/if}
     </div>
 
@@ -175,6 +182,9 @@
     grid-template-columns: 28px 1fr 1fr auto auto;
     gap: 10px;
     align-items: end;
+  }
+  .set-row.no-load {
+    grid-template-columns: 28px 1fr auto auto;
   }
   .set-row .order {
     align-self: center;
