@@ -4,7 +4,7 @@
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
   import { workoutsStore } from '$lib/stores/workouts.svelte';
-  import { applyEntryResult, entryStatus, weekWasFailed } from '$lib/domain/progression';
+  import { entryStatus, tryApplyEntryResult, tryNextPrescription } from '$lib/domain/progression';
   import { fmtKg } from '$lib/ui/utils';
   import type { Entry, Exercise, ProgressionResult } from '$lib/domain/types';
 
@@ -19,6 +19,11 @@
     };
   }
 
+  function progressionPreview(ex: Exercise | undefined, entry: Entry, skipped: boolean) {
+    if (!ex || skipped || !entry.actualSets.some((set) => set.status !== null)) return null;
+    return tryApplyEntryResult(ex, entry, null, settingsStore.data);
+  }
+
   async function commit() {
     if (!draft || saving) return;
     saving = true;
@@ -31,12 +36,11 @@
         const anyLogged = entry.actualSets.some((s) => s.status !== null);
 
         let resultInfo: ProgressionResult | null = null;
-        let userAction: 'repeat' | null = null;
         if (!de.skipped && anyLogged && ex) {
-          userAction = workoutDraftStore.summaryChoices[de.exerciseId] ?? null;
-          const r = applyEntryResult(ex, entry, userAction, settingsStore.data);
-          resultInfo = r.info;
-          exerciseUpdates.push(r.updatedExercise);
+          const attempt = tryApplyEntryResult(ex, entry, null, settingsStore.data);
+          if (!attempt.ok) throw new Error(`${ex.name}: ${attempt.error}`);
+          resultInfo = attempt.value.info;
+          exerciseUpdates.push(attempt.value.updatedExercise);
         }
 
         entries.push({
@@ -44,7 +48,7 @@
           position: 0,
           prescribed: entry.prescribed,
           actualSets: entry.actualSets,
-          userAction,
+          userAction: null,
           resultInfo,
           isDeloadSession: !!entry.isDeloadSession,
           skipped: de.skipped
@@ -87,7 +91,11 @@
       {@const entry = entryFromDraft(de)}
       {@const bar = entry.prescribed.barWeight ?? 0}
       {@const status = entryStatus(entry)}
-      {@const failed = weekWasFailed(entry)}
+      {@const preview = progressionPreview(ex, entry, de.skipped)}
+      {@const result = preview?.ok ? preview.value : null}
+      {@const info = result?.info}
+      {@const nextAttempt = result ? tryNextPrescription(result.updatedExercise, settingsStore.data) : null}
+      {@const next = nextAttempt?.ok ? nextAttempt.value : null}
       <div class="card">
         <div class="card-head">
           <h3 class="card-name">{ex?.name ?? 'Esercizio'}</h3>
@@ -101,29 +109,64 @@
           {entry.prescribed.sets}×{entry.prescribed.reps} @ {fmtKg(entry.prescribed.load + bar)}
           {settingsStore.data.weightUnit}{#if bar > 0} · {fmtKg(entry.prescribed.load)} dischi{/if}
         </div>
-        {#if failed && ex?.scheme === 'wave' && !entry.prescribed.isDeload && !de.skipped}
-          <div style="margin-top: 12px;">
-            <p style="font-size: 12px; color: var(--ink-2);">Settimana fallita. Vuoi ripeterla?</p>
-            <label style="display: inline-flex; gap: 6px; margin-right: 12px;">
-              <input
-                type="radio"
-                name="action-{de.exerciseId}"
-                value="repeat"
-                checked={workoutDraftStore.summaryChoices[de.exerciseId] === 'repeat'}
-                onchange={() => workoutDraftStore.setSummaryChoice(de.exerciseId, 'repeat')}
-              />
-              Ripeti settimana
-            </label>
-            <label style="display: inline-flex; gap: 6px;">
-              <input
-                type="radio"
-                name="action-{de.exerciseId}"
-                value="advance"
-                checked={workoutDraftStore.summaryChoices[de.exerciseId] !== 'repeat'}
-                onchange={() => workoutDraftStore.setSummaryChoice(de.exerciseId, null)}
-              />
-              Avanza
-            </label>
+        {#if preview && !preview.ok}
+          <div class="outcome error">
+            <strong>Progressione non calcolabile</strong>
+            <p>{preview.error}. Il draft è ancora disponibile: correggi l’esercizio prima di salvare.</p>
+          </div>
+        {:else if nextAttempt && !nextAttempt.ok}
+          <div class="outcome error">
+            <strong>Prossima prescrizione non calcolabile</strong>
+            <p>{nextAttempt.error}. Il draft è ancora disponibile.</p>
+          </div>
+        {:else if info?.kind === 'wave-v2-advance'}
+          <div class="outcome">
+            <p>Prescritto {fmtKg(info.prescribedLoad + bar)} {settingsStore.data.weightUnit} · consolidato {fmtKg(info.consolidatedLoad + bar)} {settingsStore.data.weightUnit}</p>
+            <p>{info.validSets} serie valide · minimo richiesto {info.requiredSets}</p>
+            {#if next}<strong>Prossima: {next.sets}×{next.reps} @ {fmtKg(next.load + (next.barWeight ?? 0))} {settingsStore.data.weightUnit}</strong>{/if}
+          </div>
+        {:else if info?.kind === 'wave-v2-rebase-advance'}
+          <div class="outcome">
+            <p>Prescritto {fmtKg(info.prescribedLoad + bar)} {settingsStore.data.weightUnit} · consolidato {fmtKg(info.consolidatedLoad + bar)} {settingsStore.data.weightUnit}</p>
+            {#if next}<strong>Prossima: {next.sets}×{next.reps} @ {fmtKg(next.load + (next.barWeight ?? 0))} {settingsStore.data.weightUnit}</strong>{/if}
+          </div>
+        {:else if info?.kind === 'wave-v2-repeat-reduced'}
+          <div class="outcome warning">
+            <p>Settimana non consolidata · {info.validSets} serie valide, minimo richiesto {info.requiredSets}</p>
+            {#if next}<strong>Ripeti {next.sets}×{next.reps} @ {fmtKg(next.load + (next.barWeight ?? 0))} {settingsStore.data.weightUnit}</strong>{/if}
+          </div>
+        {:else if info?.kind === 'wave-v2-cycle-end'}
+          <div class="outcome">
+            <p>Ciclo {info.completedCycle} consolidato · {info.validSets} serie valide, minimo richiesto {info.requiredSets}</p>
+            {#if info.adjustmentKind === 'rebase'}
+              <p>Prescritto {fmtKg(info.prescribedLoad + bar)} {settingsStore.data.weightUnit} · consolidato {fmtKg(info.consolidatedLoad + bar)} {settingsStore.data.weightUnit}</p>
+            {/if}
+            {#if next}<strong>Prossimo ciclo: {next.sets}×{next.reps} @ {fmtKg(next.load + (next.barWeight ?? 0))} {settingsStore.data.weightUnit}</strong>{/if}
+          </div>
+        {:else if info?.kind === 'linear-v2-complete'}
+          <div class="outcome">
+            <p>Successo completo · {info.validSets}/{entry.prescribed.sets} serie valide</p>
+            {#if next}<strong>Prossima: {next.sets}×{next.reps} @ {fmtKg(next.load + (next.barWeight ?? 0))} {settingsStore.data.weightUnit}</strong>{/if}
+          </div>
+        {:else if info?.kind === 'linear-v2-tolerated'}
+          <div class="outcome">
+            <p>Successo tollerato · {info.validSets}/{entry.prescribed.sets} serie valide</p>
+            {#if next}<strong>Prossima: {next.sets}×{next.reps} @ {fmtKg(next.load + (next.barWeight ?? 0))} {settingsStore.data.weightUnit}</strong>{/if}
+          </div>
+        {:else if info?.kind === 'linear-v2-repeat'}
+          <div class="outcome warning">
+            <p>Prima seduta non consolidata · {info.validSets} serie valide, minimo richiesto {info.requiredSets}</p>
+            {#if next}<strong>Ripeti: {next.sets}×{next.reps} @ {fmtKg(next.load + (next.barWeight ?? 0))} {settingsStore.data.weightUnit}</strong>{/if}
+          </div>
+        {:else if info?.kind === 'linear-v2-deload'}
+          <div class="outcome warning">
+            <p>Seconda seduta consecutiva non consolidata · riduzione del 5% quantizzata allo step</p>
+            {#if next}<strong>Prossima: {next.sets}×{next.reps} @ {fmtKg(next.load + (next.barWeight ?? 0))} {settingsStore.data.weightUnit}</strong>{/if}
+          </div>
+        {:else if info?.kind === 'deload-completed'}
+          <div class="outcome">
+            <p>Deload completato</p>
+            {#if next}<strong>Prossima: {next.sets}×{next.reps} @ {fmtKg(next.load + (next.barWeight ?? 0))} {settingsStore.data.weightUnit}</strong>{/if}
           </div>
         {/if}
       </div>
@@ -180,5 +223,29 @@
   .badge.skip {
     background: var(--bg-elev);
     color: var(--ink-2);
+  }
+  .outcome {
+    display: grid;
+    gap: 4px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--success-soft);
+    color: var(--ink-2);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .outcome p {
+    margin: 0;
+  }
+  .outcome strong {
+    color: var(--ink);
+  }
+  .outcome.warning {
+    background: var(--accent-soft);
+  }
+  .outcome.error {
+    background: var(--danger-soft, #fee2e2);
+    color: var(--danger, #991b1b);
   }
 </style>

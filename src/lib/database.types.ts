@@ -28,11 +28,13 @@ export type Database = {
           name: string
           pending_deload: boolean
           plate_rounding: number | null
+          progression_version: number
           rest_seconds: number
           scheme: string
           updated_at: string
           user_id: string
           wave_base_load: number | null
+          wave_cycle_loads: number[] | null
           wave_current_cycle: number | null
           wave_current_week: number | null
         }
@@ -49,11 +51,13 @@ export type Database = {
           name: string
           pending_deload?: boolean
           plate_rounding?: number | null
+          progression_version?: number
           rest_seconds?: number
           scheme: string
           updated_at?: string
           user_id: string
           wave_base_load?: number | null
+          wave_cycle_loads?: number[] | null
           wave_current_cycle?: number | null
           wave_current_week?: number | null
         }
@@ -70,11 +74,13 @@ export type Database = {
           name?: string
           pending_deload?: boolean
           plate_rounding?: number | null
+          progression_version?: number
           rest_seconds?: number
           scheme?: string
           updated_at?: string
           user_id?: string
           wave_base_load?: number | null
+          wave_cycle_loads?: number[] | null
           wave_current_cycle?: number | null
           wave_current_week?: number | null
         }

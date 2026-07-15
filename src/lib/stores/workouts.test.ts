@@ -26,7 +26,8 @@ const entry = {
 
 const exUpdate = { id: 'e1', name: 'Panca', scheme: 'linear', restSeconds: 180,
   cycleFailures: 0, pendingDeload: false, linearConsecutiveFailures: 0,
-  linearCurrentLoad: 102.5, linearTargetSets: 3, linearTargetReps: 5 } as unknown as Exercise;
+  linearCurrentLoad: 102.5, linearTargetSets: 3, linearTargetReps: 5,
+  progressionVersion: 2, waveCycleLoads: [60, 62.5, 65, 67.5, 70] } as Exercise;
 
 beforeEach(() => {
   rpc.mockReset();
@@ -54,6 +55,8 @@ describe('workoutsStore.commit', () => {
     expect(args.p_entries[0].exercise_id).toBe('e1');
     expect(args.p_entries[0].actual_sets).toEqual(entry.actualSets);
     expect(args.p_exercise_updates[0].linear_current_load).toBe(102.5);
+    expect(args.p_exercise_updates[0].progression_version).toBe(2);
+    expect(args.p_exercise_updates[0].wave_cycle_loads).toEqual([60, 62.5, 65, 67.5, 70]);
     expect(args.p_exercise_updates[0].user_id).toBe('u1');
 
     expect(w.id).toBe('w1');

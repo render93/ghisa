@@ -16,13 +16,7 @@ export type WorkoutDraft = {
 };
 
 function createWorkoutDraftStore() {
-  const state = $state<{
-    draft: WorkoutDraft | null;
-    summaryChoices: Record<string, 'repeat' | null>;
-  }>({
-    draft: null,
-    summaryChoices: {}
-  });
+  const state = $state<{ draft: WorkoutDraft | null }>({ draft: null });
 
   function start(
     schedaId: string,
@@ -49,7 +43,6 @@ function createWorkoutDraftStore() {
       }),
       currentExIdx: 0
     };
-    state.summaryChoices = {};
   }
 
   function setSet(exIdx: number, setIdx: number, patch: Partial<Entry['actualSets'][number]>) {
@@ -72,10 +65,6 @@ function createWorkoutDraftStore() {
     }
   }
 
-  function setSummaryChoice(exerciseId: string, action: 'repeat' | null) {
-    state.summaryChoices[exerciseId] = action;
-  }
-
   function setSkipped(exIdx: number, value: boolean) {
     if (!state.draft) return;
     state.draft.exercises[exIdx].skipped = value;
@@ -83,21 +72,16 @@ function createWorkoutDraftStore() {
 
   function cancel() {
     state.draft = null;
-    state.summaryChoices = {};
   }
 
   return {
     get draft() {
       return state.draft;
     },
-    get summaryChoices() {
-      return state.summaryChoices;
-    },
     start,
     setSet,
     nextExercise,
     prevExercise,
-    setSummaryChoice,
     setSkipped,
     cancel
   };

@@ -6,20 +6,13 @@
   const HELP: Record<string, string> = {
     weightUnit: 'Unità per visualizzare e inserire i carichi.',
     defaultRestSec: 'Tempo di riposo suggerito tra una serie e l\'altra, usato dal timer.',
-    plateRoundingWave: 'Passo di arrotondamento per gli esercizi wave (es. 2.5 = dischi da 1.25 kg per lato).',
-    plateRoundingLinear: 'Passo di arrotondamento per gli esercizi linear (es. 2 = manubri con step da 2 kg).',
-    waveCycleIncrementPct: 'Aumento percentuale del carico base alla fine di ogni ciclo di 5 settimane.',
-    cycleHoldThreshold: 'Numero di settimane fallite oltre cui il ciclo successivo mantiene il carico (nessun aumento).',
-    cycleResetThreshold: 'Numero di settimane fallite oltre cui il carico base viene ridotto al ciclo successivo.',
-    cycleResetPct: 'Quanto ridurre il carico base quando scatta il reset.',
+    plateRoundingWave: 'Step minimo caricabile per gli esercizi wave (es. 2,5 kg con dischi da 1,25 kg per lato).',
+    plateRoundingLinear: 'Step minimo caricabile per gli esercizi lineari (es. 2 kg per manubri con scatti da 2 kg).',
+    waveCycleIncrementPct: 'Aumento del ciclo successivo sul peso totale. Il 2% viene quantizzato al prossimo peso caricabile.',
     deloadEveryNCycles: 'Frequenza dei cicli di scarico (es. 3 = ogni 3 cicli completati).',
     deloadLoadPct: 'Carico durante un deload, in % del prescritto.',
     deloadSetsMult: 'Moltiplicatore serie durante un deload (es. 0.5 = metà serie).',
-    deloadRepsMult: 'Moltiplicatore reps durante un deload (es. 0.8 = -20%).',
-    linearIncrementSteps: 'Di quanti passi di arrotondamento sale il carico dopo una sessione completata pienamente (1 = un passo). Lo "step" è l\'arrotondamento dischi, globale o per-esercizio.',
-    linearResetPct: 'Quanto ridurre il carico quando scatta il deload lineare.',
-    linearLoadShiftPct: 'Percentuale di serie con peso modificato oltre cui il carico lineare viene ricalibrato al peso usato (ribasso o rialzo).',
-    linearFailThreshold: 'Numero di sessioni lineari fallite consecutive prima che scatti il deload.'
+    deloadRepsMult: 'Moltiplicatore reps durante un deload (es. 0.8 = -20%).'
   };
 
   let editing = $state({ ...settingsStore.data });
@@ -101,7 +94,7 @@
 
     <div class="field">
       <div class="field-head">
-        <label for="f-plateRoundingWave">Arrotondamento dischi</label>
+        <label for="f-plateRoundingWave">Step minimo caricabile</label>
         {@render helpIcon('plateRoundingWave')}
       </div>
       <input id="f-plateRoundingWave" type="number" bind:value={editing.plateRoundingWave} step="0.5" min="0.5" />
@@ -117,32 +110,7 @@
       {@render helpText('waveCycleIncrementPct')}
     </div>
 
-    <div class="field">
-      <div class="field-head">
-        <label for="f-cycleHoldThreshold">Soglia hold (settimane fallite)</label>
-        {@render helpIcon('cycleHoldThreshold')}
-      </div>
-      <input id="f-cycleHoldThreshold" type="number" bind:value={editing.cycleHoldThreshold} step="1" min="0" />
-      {@render helpText('cycleHoldThreshold')}
-    </div>
-
-    <div class="field">
-      <div class="field-head">
-        <label for="f-cycleResetThreshold">Soglia reset</label>
-        {@render helpIcon('cycleResetThreshold')}
-      </div>
-      <input id="f-cycleResetThreshold" type="number" bind:value={editing.cycleResetThreshold} step="1" min="0" />
-      {@render helpText('cycleResetThreshold')}
-    </div>
-
-    <div class="field">
-      <div class="field-head">
-        <label for="f-cycleResetPct">Riduzione su reset (%)</label>
-        {@render helpIcon('cycleResetPct')}
-      </div>
-      <input id="f-cycleResetPct" type="number" bind:value={editing.cycleResetPct} step="0.5" min="0" />
-      {@render helpText('cycleResetPct')}
-    </div>
+    <p class="fixed-rule">Fino al 25% di serie non valide è tollerato. La soglia è fissa e condivisa con la progressione lineare.</p>
 
     <div class="field">
       <div class="field-head">
@@ -186,48 +154,14 @@
 
     <div class="field">
       <div class="field-head">
-        <label for="f-plateRoundingLinear">Arrotondamento dischi</label>
+        <label for="f-plateRoundingLinear">Step minimo caricabile</label>
         {@render helpIcon('plateRoundingLinear')}
       </div>
       <input id="f-plateRoundingLinear" type="number" bind:value={editing.plateRoundingLinear} step="0.5" min="0.5" />
       {@render helpText('plateRoundingLinear')}
     </div>
 
-    <div class="field">
-      <div class="field-head">
-        <label for="f-linearIncrementSteps">Incremento per advance (passi)</label>
-        {@render helpIcon('linearIncrementSteps')}
-      </div>
-      <input id="f-linearIncrementSteps" type="number" bind:value={editing.linearIncrementSteps} step="1" min="1" />
-      {@render helpText('linearIncrementSteps')}
-    </div>
-
-    <div class="field">
-      <div class="field-head">
-        <label for="f-linearResetPct">Riduzione su deload (%)</label>
-        {@render helpIcon('linearResetPct')}
-      </div>
-      <input id="f-linearResetPct" type="number" bind:value={editing.linearResetPct} step="0.5" min="0" />
-      {@render helpText('linearResetPct')}
-    </div>
-
-    <div class="field">
-      <div class="field-head">
-        <label for="f-linearLoadShiftPct">Soglia ricalibro peso (%)</label>
-        {@render helpIcon('linearLoadShiftPct')}
-      </div>
-      <input id="f-linearLoadShiftPct" type="number" bind:value={editing.linearLoadShiftPct} step="5" min="0" max="100" />
-      {@render helpText('linearLoadShiftPct')}
-    </div>
-
-    <div class="field">
-      <div class="field-head">
-        <label for="f-linearFailThreshold">Fallimenti prima del deload</label>
-        {@render helpIcon('linearFailThreshold')}
-      </div>
-      <input id="f-linearFailThreshold" type="number" bind:value={editing.linearFailThreshold} step="1" min="1" />
-      {@render helpText('linearFailThreshold')}
-    </div>
+    <p class="fixed-rule">Successo completo: +2 step. Successo tollerato: +1 step. Oltre il 25% di serie non valide non c'è avanzamento.</p>
   </div>
 
   <div class="card">
@@ -274,6 +208,12 @@
     border-radius: 8px;
     border-left: 3px solid var(--accent);
     margin: 6px 0 0;
+  }
+  .fixed-rule {
+    margin: 4px 0 16px;
+    color: var(--ink-3);
+    font-size: 12px;
+    line-height: 1.45;
   }
   input, select { padding: 12px; border: 1px solid var(--line); border-radius: 12px; font-size: 16px; }
   .btn { padding: 14px; border-radius: 12px; font-weight: 600; flex: 1; }

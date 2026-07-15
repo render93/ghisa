@@ -6,7 +6,7 @@
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
   import { workoutDraftStore } from '$lib/stores/workout-draft.svelte';
-  import { nextPrescription, effectiveRounding } from '$lib/domain/progression';
+  import { tryNextPrescription, effectiveRounding } from '$lib/domain/progression';
   import { fmtKg } from '$lib/ui/utils';
   import { startRest } from '$lib/ui/rest-timer-bus';
   import type { Exercise } from '$lib/domain/types';
@@ -25,9 +25,21 @@
     const exs = day.exerciseIds
       .map((id) => exercisesStore.getById(id))
       .filter((e): e is Exercise => !!e);
-    workoutDraftStore.start(schedaId, dayId, exs, (ex) =>
-      nextPrescription(ex, settingsStore.data)
-    );
+    const prescriptions = new Map<string, ReturnType<typeof tryNextPrescription>>();
+    for (const ex of exs) {
+      const attempt = tryNextPrescription(ex, settingsStore.data);
+      prescriptions.set(ex.id, attempt);
+      if (!attempt.ok) {
+        alert(`Impossibile avviare la seduta: ${ex.name} ha una configurazione non valida (${attempt.error}).`);
+        nav(`/schede/${schedaId}/days/${dayId}/`);
+        return;
+      }
+    }
+    workoutDraftStore.start(schedaId, dayId, exs, (ex) => {
+      const attempt = prescriptions.get(ex.id);
+      if (!attempt?.ok) throw new Error(`prescrizione non disponibile per ${ex.name}`);
+      return attempt.value;
+    });
   });
 
   const draft = $derived(workoutDraftStore.draft);
@@ -42,10 +54,10 @@
       : currentEntry.skipped || currentEntry.sets.every((s) => s.status !== null)
   );
 
-  function logSet(idx: number, status: 'ok' | 'fail') {
+  function confirmSet(idx: number) {
     if (!draft) return;
-    workoutDraftStore.setSet(draft.currentExIdx, idx, { status });
-    if (status === 'ok' && currentExercise) {
+    workoutDraftStore.setSet(draft.currentExIdx, idx, { status: 'ok' });
+    if (currentExercise) {
       startRest(currentExercise.restSeconds, currentExercise.name);
     }
   }
@@ -111,7 +123,7 @@
     {:else}
       {#each currentEntry.sets as set, i (i)}
         {@const closed = set.status !== null}
-        <div class="set-row card" class:closed class:no-load={currentExercise.scheme !== 'linear'}>
+        <div class="set-row card" class:closed>
           <span class="order">{i + 1}</span>
           <label class="field">
             <span class="field-label">REPS</span>
@@ -123,35 +135,26 @@
               oninput={(e) => updateReps(i, +(e.currentTarget as HTMLInputElement).value)}
             />
           </label>
-          {#if currentExercise.scheme === 'linear'}
-            <label class="field">
-              <span class="field-label">KG{#if bar > 0} (tot){/if}</span>
-              <input
-                type="number"
-                min="0"
-                step={effectiveRounding(currentExercise, settingsStore.data)}
-                value={set.load + bar}
-                disabled={closed}
-                oninput={(e) => updateLoad(i, Math.max(0, +(e.currentTarget as HTMLInputElement).value - bar))}
-              />
-            </label>
-          {/if}
+          <div class="field">
+            <label class="field-label" for="set-load-{i}">KG{#if bar > 0} (tot){/if}</label>
+            <input
+              id="set-load-{i}"
+              type="number"
+              min="0"
+              step={effectiveRounding(currentExercise, settingsStore.data)}
+              value={set.load + bar}
+              disabled={closed}
+              oninput={(e) => updateLoad(i, Math.max(0, +(e.currentTarget as HTMLInputElement).value - bar))}
+            />
+          </div>
           <button
             type="button"
-            class="mark-btn pass"
+            class="mark-btn confirm"
             class:active={set.status === 'ok'}
             disabled={closed}
-            onclick={() => logSet(i, 'ok')}
-            aria-label="Set riuscito"
+            onclick={() => confirmSet(i)}
+            aria-label="Conferma serie eseguita"
           >✓</button>
-          <button
-            type="button"
-            class="mark-btn miss"
-            class:active={set.status === 'fail'}
-            disabled={closed}
-            onclick={() => logSet(i, 'fail')}
-            aria-label="Set fallito"
-          >✕</button>
         </div>
       {/each}
     {/if}
@@ -179,12 +182,9 @@
   }
   .set-row {
     display: grid;
-    grid-template-columns: 28px 1fr 1fr auto auto;
+    grid-template-columns: 28px 1fr 1fr auto;
     gap: 10px;
     align-items: end;
-  }
-  .set-row.no-load {
-    grid-template-columns: 28px 1fr auto auto;
   }
   .set-row .order {
     align-self: center;
@@ -231,15 +231,10 @@
       opacity 0.15s;
     box-sizing: border-box;
   }
-  .mark-btn.pass.active {
-    background: var(--success);
+  .mark-btn.confirm.active {
+    background: var(--ink);
     color: white;
-    border-color: var(--success);
-  }
-  .mark-btn.miss.active {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
+    border-color: var(--ink);
   }
   .mark-btn:disabled:not(.active) {
     opacity: 0.35;

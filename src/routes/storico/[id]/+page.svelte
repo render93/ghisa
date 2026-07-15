@@ -40,9 +40,6 @@
                 <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 13px;">
                   <span>{i + 1}.</span>
                   <span>{s.reps} × {fmtKg(s.load + bar)}</span>
-                  <span class:ok={s.status === 'ok'} class:fail={s.status === 'fail'}>
-                    {s.status === 'ok' ? '✓' : s.status === 'fail' ? '✕' : '—'}
-                  </span>
                 </div>
               {/each}
             </div>
@@ -55,8 +52,6 @@
 
 <style>
   .back { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); padding: 6px 0; }
-  .ok { color: var(--success); }
-  .fail { color: var(--accent); }
   .badge.deload { background: var(--warn); color: white; padding: 2px 8px; font-size: 9px; border-radius: 6px; margin-left: 8px; }
   .badge.skip {
     background: var(--bg-elev);
