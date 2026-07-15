@@ -47,7 +47,9 @@ Stores wrap Supabase rows in a domain shape via `dbToDomain` / `domainToDb` help
 
 ### Domain layer — pure functions, fully unit-tested
 
-`src/lib/domain/progression.ts` holds the wave + linear progression engines as pure functions taking `Exercise`, `Entry`, `Settings` and returning a new `Exercise` + a `ProgressionResult` discriminated union. No I/O, no global state, no mutation of inputs.
+`src/lib/domain/progression.ts` holds the wave + linear progression engines as pure functions taking `Exercise`, `Entry`, `Settings` and returning a new `Exercise` + a `ProgressionResult` discriminated union. No I/O, no global state, no mutation of inputs. `progressionVersion = 2` selects the current engine; missing/v1 state is converted lazily by `ensureProgressionV2` at the first useful commit without rewriting history.
+
+Wave v2 stores five authoritative plate loads in `Exercise.waveCycleLoads`. Actual loads determine consolidation, rebase or an automatic reduced repeat; there is no manual repeat/advance choice. Linear v2 uses the fixed 25% tolerance: full success adds two physical steps, tolerated success adds one, the first failure holds and the second consecutive failure reduces total load by 5%.
 
 Two functions must stay in lock-step:
 - `nextPrescription(ex, settings)` — computes the prescription **shown before** a session.
@@ -60,7 +62,7 @@ If you change one, run the Vitest suite (`progression.test.ts`) and update the o
 A workout in progress is **not** persisted. It lives in `workout-draft.svelte.ts` (`workoutDraftStore.draft`), populated when the user starts a session in `/workout/new/`. Each set logged updates the draft in memory only.
 
 The draft becomes a real DB record only when the user confirms in `/workout/summary/`:
-1. For each entry with any logged set, `applyEntryResult(...)` computes the updated exercise + result info; the component collects the entries and the advanced exercises.
+1. For each entry with any logged set, `applyEntryResult(...)` computes the updated exercise + versioned result info; the component collects the entries and the advanced exercises. Wave outcomes are automatic and previewed in the summary.
 2. A single transactional RPC — `supabase.rpc('commit_workout', ...)` via `workoutsStore.commit(...)` — inserts one `workouts` row + N `workout_entries` rows **and** advances the exercises' progression, all in one Postgres transaction (all-or-nothing).
 3. On success the in-memory exercise state is synced via `exercisesStore.applyLocal(...)` (no extra DB round-trip), the draft is cleared, and the user is sent to `/storico/`. On failure nothing is written, the draft is kept, and a retry is clean.
 
@@ -72,7 +74,7 @@ A `saving` flag disables the confirm button to prevent double-submit. This is th
 
 ### Persistence + schema changes
 
-Schema migrations are SQL files in `supabase/migrations/`. The repo does **not** apply them automatically — the migration is hand-run in the Supabase SQL Editor (see `docs/superpowers/plans/...`). After applying:
+Schema migrations are SQL files in `supabase/migrations/`. The repo does **not** apply them automatically — the migration is hand-run in the Supabase SQL Editor (see `docs/superpowers/plans/...`). Progression v2 requires both additive `exercises.progression_version` / `exercises.wave_cycle_loads` columns and the matching `commit_workout` RPC update; never deploy the new writer between those two operations. After applying:
 
 ```bash
 npx supabase gen types typescript --project-id <project-ref> > src/lib/database.types.ts
@@ -89,7 +91,7 @@ All 6 tables have RLS policies of the form `auth.uid() = user_id` — single-ten
 4. `npm run build` with `BASE_PATH=/<repo-name>` + Supabase secrets from repo secrets
 5. Uploads `build/` as the Pages artifact and deploys
 
-The Supabase **Site URL** and **Redirect URLs** must include the production GitHub Pages URL with trailing slash, otherwise magic-link emails redirect to `localhost` in prod.
+The Supabase **Site URL** and **Redirect URLs** must include the production GitHub Pages URL with trailing slash. Redirect URLs must also allow `http://localhost:5173/**` for local magic-link login. The client explicitly derives `emailRedirectTo` from the current origin and SvelteKit base path.
 
 ## Conventions
 
@@ -98,4 +100,4 @@ The Supabase **Site URL** and **Redirect URLs** must include the production GitH
 - Bottom tabbar exposes four sections, mapped to routes: `Allenamento` → `/`, `Esercizi` → `/esercizi/`, `Storico` → `/storico/`, `Impostazioni` → `/impostazioni/`.
 - `alert()` / `confirm()` calls are intentional placeholders for future toast/modal components — don't replace them piecemeal; do all of them in one pass when the toast component lands.
 - When a store needs the current user id, it calls `supabase.auth.getUser()` directly rather than reading from `authStore`. Keep this pattern — it ensures every write is double-checked against the live session, not stale store state.
-- Plate rounding, default rest seconds, deload settings, threshold cutoffs all live in `Settings` and are read at use-site from `settingsStore.data`. Do not hardcode them.
+- Plate rounding, default rest seconds and deload settings live in `Settings` and are read at use-site from `settingsStore.data`. The progression failure tolerance is the intentional exception: it is a fixed 25% domain rule shared by wave and linear and must not be exposed as a setting.
