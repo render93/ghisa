@@ -27,8 +27,12 @@ export type Exercise = {
   restSeconds: number;
   plateRounding?: number; // override del passo di arrotondamento; assente = default dello schema
   barWeight?: number; // peso bilanciere (kg): concorre al totale ma esente da arrotondamento; assente = 0
+  // assente equivale al motore legacy v1
+  progressionVersion?: number;
   // wave
   waveBaseLoad?: number;
+  // piano v2: esattamente 5 carichi, tutti escluso bilanciere
+  waveCycleLoads?: number[];
   waveCurrentWeek?: number;
   waveCurrentCycle?: number;
   cycleFailures?: number;
@@ -50,6 +54,7 @@ export type Prescription = {
   cycle?: number;
   isDeload?: boolean;
   consecutiveFails?: number;
+  algorithmVersion?: number;
 };
 
 export type SetStatus = 'ok' | 'fail' | null;
@@ -87,6 +92,61 @@ export type ProgressionResult =
       pendingDeload: boolean;
       nextCycle: number;
     }
+  | {
+      kind: 'wave-v2-advance';
+      algorithmVersion: 2;
+      completedWeek: number;
+      nextWeek: number;
+      prescribedLoad: number;
+      consolidatedLoad: number;
+      requiredSets: number;
+      validSets: number;
+      nextLoad: number;
+    }
+  | {
+      kind: 'wave-v2-rebase-advance';
+      algorithmVersion: 2;
+      completedWeek: number;
+      prescribedLoad: number;
+      consolidatedLoad: number;
+      oldPlan: number[];
+      newPlan: number[];
+    }
+  | {
+      kind: 'wave-v2-repeat-reduced';
+      algorithmVersion: 2;
+      week: number;
+      prescribedLoad: number;
+      reducedLoad: number;
+      requiredSets: number;
+      validSets: number;
+      oldPlan: number[];
+      newPlan: number[];
+    }
+  | {
+      kind: 'wave-v2-cycle-end';
+      algorithmVersion: 2;
+      completedCycle: number;
+      adjustmentKind: 'advance' | 'rebase';
+      prescribedLoad: number;
+      consolidatedLoad: number;
+      requiredSets: number;
+      validSets: number;
+      oldPlan: number[];
+      completedPlan: number[];
+      nextPlan: number[];
+      pendingDeload: boolean;
+    }
+  | {
+      kind: 'linear-v2-complete' | 'linear-v2-tolerated' | 'linear-v2-repeat' | 'linear-v2-deload';
+      algorithmVersion: 2;
+      requiredSets: number;
+      validSets: number;
+      oldLoad: number;
+      newLoad: number;
+      incrementApplied: number;
+      consecutiveFailures: number;
+    }
   | { kind: 'deload-completed' };
 
 export type EntryStatus =
@@ -105,7 +165,7 @@ export const WAVE_PATTERN = [
 export const DEFAULT_SETTINGS: Settings = {
   defaultRestSec: 180,
   weightUnit: 'kg',
-  waveCycleIncrementPct: 2.5,
+  waveCycleIncrementPct: 2,
   linearIncrementSteps: 1,
   linearResetPct: 10,
   linearLoadShiftPct: 25,

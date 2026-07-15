@@ -9,7 +9,9 @@ const dbRow = {
   plate_rounding: null,
   bar_weight: null,
   linear_increment_steps: null,
+  progression_version: 2,
   wave_base_load: null,
+  wave_cycle_loads: [60, 62.5, 65, 67.5, 70],
   wave_current_week: null,
   wave_current_cycle: null,
   cycle_failures: 0,
@@ -62,5 +64,32 @@ describe('domainToDb', () => {
     expect(row.user_id).toBe('u1');
     expect(row.id).toBe('e1');
     expect(row.linear_current_load).toBe(100);
+    expect(row.progression_version).toBe(2);
+    expect(row.wave_cycle_loads).toEqual([60, 62.5, 65, 67.5, 70]);
+  });
+
+  it('copia il piano wave senza condividere l’array col dominio', () => {
+    const ex = exercisesStore.getById('e1')!;
+    const row = domainToDb(ex, 'u1');
+
+    row.wave_cycle_loads![0] = 999;
+
+    expect(ex.waveCycleLoads).toEqual([60, 62.5, 65, 67.5, 70]);
+  });
+});
+
+describe('dbToDomain', () => {
+  beforeEach(async () => {
+    await exercisesStore.load();
+  });
+
+  it('mappa versione e piano v2 copiando l’array del record DB', () => {
+    const ex = exercisesStore.getById('e1')!;
+    expect(ex.progressionVersion).toBe(2);
+    expect(ex.waveCycleLoads).toEqual([60, 62.5, 65, 67.5, 70]);
+
+    ex.waveCycleLoads![0] = 999;
+
+    expect(dbRow.wave_cycle_loads).toEqual([60, 62.5, 65, 67.5, 70]);
   });
 });

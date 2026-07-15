@@ -11,7 +11,9 @@ type DbExercise = {
   plate_rounding: number | null;
   bar_weight: number | null;
   linear_increment_steps: number | null;
+  progression_version: number;
   wave_base_load: number | null;
+  wave_cycle_loads: number[] | null;
   wave_current_week: number | null;
   wave_current_cycle: number | null;
   cycle_failures: number;
@@ -31,7 +33,9 @@ function dbToDomain(row: DbExercise): Exercise {
     plateRounding: row.plate_rounding ?? undefined,
     barWeight: row.bar_weight ?? undefined,
     linearIncrementSteps: row.linear_increment_steps ?? undefined,
+    progressionVersion: row.progression_version,
     waveBaseLoad: row.wave_base_load ?? undefined,
+    waveCycleLoads: row.wave_cycle_loads ? [...row.wave_cycle_loads] : undefined,
     waveCurrentWeek: row.wave_current_week ?? undefined,
     waveCurrentCycle: row.wave_current_cycle ?? undefined,
     cycleFailures: row.cycle_failures,
@@ -53,7 +57,9 @@ export function domainToDb(ex: Exercise, userId: string): Omit<DbExercise, 'id'>
     plate_rounding: ex.plateRounding ?? null,
     bar_weight: ex.barWeight ?? null,
     linear_increment_steps: ex.linearIncrementSteps ?? null,
+    progression_version: ex.progressionVersion ?? 1,
     wave_base_load: ex.waveBaseLoad ?? null,
+    wave_cycle_loads: ex.waveCycleLoads ? [...ex.waveCycleLoads] : null,
     wave_current_week: ex.waveCurrentWeek ?? null,
     wave_current_cycle: ex.waveCurrentCycle ?? null,
     cycle_failures: ex.cycleFailures ?? 0,

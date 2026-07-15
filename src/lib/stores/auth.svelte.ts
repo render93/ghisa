@@ -1,4 +1,5 @@
 import { supabase } from '$lib/supabase';
+import { authRedirectUrl } from '$lib/auth/redirect';
 import type { Session, User } from '@supabase/supabase-js';
 
 type AuthState = {
@@ -25,7 +26,10 @@ function createAuthStore() {
   async function signInWithMagicLink(email: string) {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false }
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: authRedirectUrl(window.location.origin)
+      }
     });
     if (error) throw error;
   }

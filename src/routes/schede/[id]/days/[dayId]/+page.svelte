@@ -4,7 +4,7 @@
   import { schedeStore } from '$lib/stores/schede.svelte';
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { workoutsStore } from '$lib/stores/workouts.svelte';
-  import { nextPrescription } from '$lib/domain/progression';
+  import { tryNextPrescription } from '$lib/domain/progression';
   import { settingsStore } from '$lib/stores/settings.svelte';
   import { fmtKg } from '$lib/ui/utils';
 
@@ -92,16 +92,20 @@
     <p class="view-sub">{exercisesInDay.length} esercizi</p>
 
     {#each exercisesInDay as ex, idx (ex.id)}
-      {@const p = nextPrescription(ex, settingsStore.data)}
+      {@const attempt = tryNextPrescription(ex, settingsStore.data)}
       <div class="ex-card removable">
         <span class="order">{idx + 1}</span>
         <div class="info">
           <h3 class="name">{ex.name}</h3>
-          <div class="prescription">
-            <span class="sets-x-reps">{p.sets}×{p.reps}</span>
-            <span class="at">@</span>
-            <span class="load">{fmtKg(p.load + (p.barWeight ?? 0))}<span class="unit">{settingsStore.data.weightUnit}</span></span>
-          </div>
+          {#if attempt.ok}
+            <div class="prescription">
+              <span class="sets-x-reps">{attempt.value.sets}×{attempt.value.reps}</span>
+              <span class="at">@</span>
+              <span class="load">{fmtKg(attempt.value.load + (attempt.value.barWeight ?? 0))}<span class="unit">{settingsStore.data.weightUnit}</span></span>
+            </div>
+          {:else}
+            <div class="prescription">Configurazione non valida · modifica l’esercizio</div>
+          {/if}
         </div>
         <button class="card-menu" onclick={() => removeFromDay(ex.id)}>✕</button>
       </div>

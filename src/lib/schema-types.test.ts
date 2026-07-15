@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const migrationsDir = join(root, 'supabase/migrations');
 const typesPath = join(root, 'src/lib/database.types.ts');
+const progressionV2MigrationPath = join(migrationsDir, '20260715000000_progression_v2.sql');
 
 // Concatena tutte le migration, rimuovendo i commenti di riga (-- ...)
 function loadMigrationsSql(): string {
@@ -128,4 +129,19 @@ describe('schema SQL ↔ database.types.ts', () => {
       });
     }
   }
+});
+
+describe('migration progressione v2', () => {
+  const sql = readFileSync(progressionV2MigrationPath, 'utf8');
+  const rpcBody = /create\s+or\s+replace\s+function\s+commit_workout[\s\S]*?as\s+\$\$([\s\S]*?)\$\$/i.exec(sql)?.[1] ?? '';
+
+  it('persiste versione e piano wave nello stesso commit atomico', () => {
+    expect(rpcBody).not.toBe('');
+    expect(rpcBody).toMatch(/progression_version\s*=/i);
+    expect(rpcBody).toMatch(/wave_cycle_loads\s*=/i);
+  });
+
+  it('porta al 2% le impostazioni wave già salvate senza sostituire il JSON', () => {
+    expect(sql).toMatch(/jsonb_set\s*\(\s*data\s*,\s*'\{waveCycleIncrementPct\}'\s*,\s*'2'::jsonb/i);
+  });
 });

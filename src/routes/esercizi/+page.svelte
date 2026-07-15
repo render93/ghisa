@@ -2,7 +2,7 @@
   import { nav } from '$lib/ui/nav';
   import { exercisesStore } from '$lib/stores/exercises.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
-  import { nextPrescription } from '$lib/domain/progression';
+  import { tryNextPrescription } from '$lib/domain/progression';
   import { fmtKg } from '$lib/ui/utils';
 </script>
 
@@ -19,22 +19,18 @@
   {/if}
 
   {#each exercisesStore.items as ex (ex.id)}
-    {@const p = nextPrescription(ex, settingsStore.data)}
+    {@const attempt = tryNextPrescription(ex, settingsStore.data)}
     <button class="ex-card" onclick={() => nav(`/esercizi/${ex.id}/`)} style="text-align: left; width: 100%; cursor: pointer;">
       <div class="scheme-tag {ex.scheme}">{ex.scheme}</div>
       <h3 class="name">{ex.name}</h3>
-      <div class="prescription">
-        <span class="sets-x-reps">{p.sets}×{p.reps}</span>
-        <span class="at">@</span>
-        <span class="load">{fmtKg(p.load + (p.barWeight ?? 0))}<span class="unit">{settingsStore.data.weightUnit}</span></span>
-      </div>
-      {#if ex.scheme === 'wave'}
-        <div class="meta">
-          <span>Settimana {ex.waveCurrentWeek ?? 1}</span>
-          <span class="dot"></span>
-          <span>Ciclo {ex.waveCurrentCycle ?? 1}</span>
-          {#if ex.pendingDeload}<span class="dot"></span><span>Deload</span>{/if}
+      {#if attempt.ok}
+        <div class="prescription">
+          <span class="sets-x-reps">{attempt.value.sets}×{attempt.value.reps}</span>
+          <span class="at">@</span>
+          <span class="load">{fmtKg(attempt.value.load + (attempt.value.barWeight ?? 0))}<span class="unit">{settingsStore.data.weightUnit}</span></span>
         </div>
+      {:else}
+        <div class="prescription error">Configurazione non valida · apri per correggere</div>
       {/if}
     </button>
   {/each}
