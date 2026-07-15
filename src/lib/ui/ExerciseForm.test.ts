@@ -1,5 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
+
+// Importing the component alone pulls in settingsStore -> $lib/supabase, which
+// instantiates the Supabase client at module load. On Node < 22 (CI) createClient
+// throws because there is no native WebSocket. This test only reads the in-memory
+// defaults, so we mock the module the way the other store tests do.
+// vi.mock is hoisted above the imports, so the mock is active at load time.
+vi.mock('$lib/supabase', () => ({ supabase: {} }));
+
 import ExerciseForm from './ExerciseForm.svelte';
 
 const callbacks = {
